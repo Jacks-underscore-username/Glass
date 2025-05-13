@@ -1,0 +1,21 @@
+{
+  "name": "glass-canvas",
+  "version": "1.0.0",
+  "description": "An all-in-one rendering package for canvas to avoid all the boilerplate",
+  "main": "Glass.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "jacks-underscore-username",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jacks-underscore-username/Glass.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Jacks-underscore-username/Glass/issues"
+  },
+  "dependencies": {
+    "basic-color": "^1.0.0"
+  }
+}
