@@ -1,4 +1,4 @@
-import Color from 'basic-color'
+import Color from './Color.js'
 
 /**
  * @typedef {object} GlassEntryBase
