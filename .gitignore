@@ -1,4 +1,4 @@
 biome.jsonc
 jsconfig.json
 node_modules
-testing/test_results
+testing/failed_test_results

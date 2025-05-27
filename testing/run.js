@@ -44,15 +44,16 @@ const runTest = name =>
           const filename = `${name}.${imageFormat}`
           if (!fs.existsSync(path.join(__dirname, 'test_target_results')))
             fs.mkdirSync(path.join(__dirname, 'test_target_results'))
-          if (!fs.existsSync(path.join(__dirname, 'test_results'))) fs.mkdirSync(path.join(__dirname, 'test_results'))
           const isFirstRun = !fs.existsSync(path.join(__dirname, 'test_target_results', filename))
           const success =
             isFirstRun ||
             fs.readFileSync(path.join(__dirname, 'test_target_results', filename)).toString() === binaryData.toString()
-          fs.writeFileSync(
-            path.join(__dirname, isFirstRun ? 'test_target_results' : 'test_results', filename),
-            binaryData
-          )
+          if (!success) {
+            if (!fs.existsSync(path.join(__dirname, 'failed_test_results')))
+              fs.mkdirSync(path.join(__dirname, 'failed_test_results'))
+            fs.writeFileSync(path.join(__dirname, 'failed_test_results', filename), binaryData)
+          }
+          if (isFirstRun) fs.writeFileSync(path.join(__dirname, 'test_target_results', filename), binaryData)
 
           await browser.close()
           server.stop().then(() => resolve(success))
@@ -68,9 +69,13 @@ const runTest = name =>
 
     await page.goto(server.url.toString())
   })
-;(async () => {
-  if (fs.existsSync(path.join(__dirname, 'test_results')))
-    fs.rmSync(path.join(__dirname, 'test_results'), { recursive: true, force: true })
+
+const runTests = async () => {
+  process.stdout.write('\x1b[2J\x1b[H')
+  shouldRunTests = false
+  isRunningTests = true
+  if (fs.existsSync(path.join(__dirname, 'failed_test_results')))
+    fs.rmSync(path.join(__dirname, 'failed_test_results'), { recursive: true, force: true })
   const tests = fs.readdirSync(path.join(__dirname, 'tests')).map(file => file.split('.')[0])
   let oldRemovedCount = 0
   if (fs.existsSync(path.join(__dirname, 'test_target_results')))
@@ -105,4 +110,22 @@ const runTest = name =>
   console.log(
     `${failCount ? (successCount ? COLORS.yellow : COLORS.red) : COLORS.green}${tests.length} test${tests.length === 1 ? '' : 's'} ran in ${Date.now() - allStartTime} ms`
   )
-})()
+  if (shouldRunTests) await runTests()
+  isRunningTests = false
+}
+
+let shouldRunTests = false
+let isRunningTests = false
+/**
+ * @param {string} mode
+ */
+const watchCallback = mode => {
+  if (mode !== 'change') return
+  shouldRunTests = true
+  if (!isRunningTests) runTests()
+}
+if (process.argv[2] === 'watch') {
+  fs.watch(path.join(__dirname, 'tests'), { persistent: true, recursive: true }, watchCallback)
+  fs.watch(path.join(__dirname, '..', 'Glass.js'), { persistent: true }, watchCallback)
+}
+runTests()

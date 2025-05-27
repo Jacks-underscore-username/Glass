@@ -455,7 +455,6 @@ class Glass {
         canvasHeight: canvas.height
       })
 
-    if (this._renderStack.length === 0) return
     if (this.viewportMode === 'auto') {
       let minX = Number.POSITIVE_INFINITY
       let minY = Number.POSITIVE_INFINITY
