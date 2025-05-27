@@ -65,6 +65,30 @@ const runTest = name =>
 
     const page = (await browser.pages())[0]
 
+    /**
+     * @param {puppeteer.ConsoleMessage} event
+     * @returns {string}
+     */
+    const formatMessage = event => {
+      const type = `[Console ${event.type()[0].toUpperCase()}${event.type().slice(1)}]`
+      const trace = event
+        .stackTrace()
+        .map(trace =>
+          trace.columnNumber
+            ? `${trace.url?.replace('http://localhost:3000/', '')} ${trace.lineNumber}:${trace.columnNumber}`
+            : trace.url
+        )
+        .join('\n')
+      return `${type}: ${trace} -> ${event.text()}`
+    }
+
+    page.on('console', event => {
+      if (event.type() === 'error') console.error(formatMessage(event))
+      else if (event.type() === 'warn') console.warn(formatMessage(event))
+      else if (event.type() === 'info') console.error(formatMessage(event))
+      else console.log(formatMessage(event))
+    })
+
     await page.setViewport({ width: 1080, height: 1024 })
 
     await page.goto(server.url.toString())

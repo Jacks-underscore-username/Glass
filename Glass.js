@@ -1,6 +1,8 @@
 import Color from './Color.js'
 
 /**
+ * @typedef {string | GlassColorGradient | CanvasGradient} GlassColor
+ *
  * @typedef {object} GlassEntryBase
  *
  * @property {(scale:number)=>any} scale
@@ -9,7 +11,7 @@ import Color from './Color.js'
  *
  * @property {{minX:number,minY:number,maxX:number,maxY:number}} bounds
  *
- * @property {string | GlassColorGradient | CanvasGradient} color
+ * @property {GlassColor} color
  * @property {number} lineWidth
  * @property {number} [shadowBlur]
  * @property {string} [shadowColor]
@@ -123,7 +125,7 @@ import Color from './Color.js'
  *
  *
  * @typedef {object} GlassDrawCallOptionsBase
- * @property {string} color A canvas compatible color string.
+ * @property {GlassColor} color
  * @property {number} [lineWidth] When `lineWidth` is `0` the shape is filled instead of outlined, defaults to `0`.
  * @property {number} [shadowBlur] Defaults to `0`.
  * @property {string} [shadowColor] A canvas compatible color string.
@@ -157,7 +159,6 @@ const isClickableEntry = entry => entry.mouseMode !== 'ignore' && typeof entry.h
  * @param {boolean} [onlyStyle] Defaults to `false`.
  */
 const ctxClose = (ctx, entry, onlyStyle = false) => {
-  if (typeof entry.color !== 'string') throw new TypeError('Non string color passed to ctxClose')
   if (entry.shadowBlur) {
     ctx.shadowBlur = entry.shadowBlur
     ctx.shadowColor = entry.shadowColor ?? ''
@@ -878,7 +879,6 @@ class Glass {
         ctx.lineTo(points[2][0], points[2][1])
         ctx.lineTo(points[3][0], points[3][1])
         ctx.lineTo(points[0][0], points[0][1])
-
         ctxClose(ctx, this)
       }
     }
