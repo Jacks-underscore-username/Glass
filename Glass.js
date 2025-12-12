@@ -741,7 +741,7 @@ class Glass {
    * @param {number} shapeDefinition.width
    * @param {number} shapeDefinition.height
    * @param {number} [shapeDefinition.rotation] In degrees, clockwise with `0` being up, defaults to `0`.
-   * @param {'corner' | 'center'} [shapeDefinition.coordinateMode] What part of the rect the x\y is, `'corner'` means top left corner, defaults to `'corner'`.
+   * @param {'corner' | 'center'} [shapeDefinition.coordinateMode] What part of the rect the x/y is, `'corner'` means top left corner, defaults to `'corner'`.
    * @param {GlassDrawCallOptions} options
    * @param {any} [tags]
    * @return {GlassEntryRect}
@@ -890,7 +890,7 @@ class Glass {
    * @param {number} shapeDefinition.x
    * @param {number} shapeDefinition.y
    * @param {number} shapeDefinition.radius
-   * @param {number} [shapeDefinition.rotation] (this property exists only for continuity reasons, you can accomplish the same things with startAngle / endAngle) In degrees, clockwise with `0` being up, defaults to `0`.
+   * @param {number} [shapeDefinition.rotation] (this property exists only for continuity reasons, and is just added to startAngle / endAngle then set back to 0) In degrees, clockwise with `0` being up, defaults to `0`.
    * @param {number} [shapeDefinition.startAngle] In degrees, clockwise with `0` being up, defaults to `0`.
    * @param {number} [shapeDefinition.endAngle] In degrees, clockwise with `0` being up, defaults to `0`.
    * @param {GlassDrawCallOptions} options
@@ -899,8 +899,9 @@ class Glass {
    */
   arc(shapeDefinition, options, ...tags) {
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
-    shapeDefinition.startAngle = (((shapeDefinition.startAngle ?? 0) % 360) + 360) % 360
-    shapeDefinition.endAngle = (((shapeDefinition.endAngle ?? 0) % 360) + 360) % 360
+    shapeDefinition.startAngle = ((((shapeDefinition.startAngle ?? 0) + shapeDefinition.rotation) % 360) + 360) % 360
+    shapeDefinition.endAngle = ((((shapeDefinition.endAngle ?? 0) + shapeDefinition.rotation) % 360) + 360) % 360
+    shapeDefinition.rotation = 0
     if (shapeDefinition.startAngle === shapeDefinition.endAngle) {
       shapeDefinition.startAngle = 0
       shapeDefinition.endAngle = 360
