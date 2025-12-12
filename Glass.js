@@ -80,9 +80,8 @@ import Color from './Color.js'
  * @typedef {object} GlassEntryTriangleArgs
  * @property {'triangle'} type
  * @property {number} length1
- * @property {number} angle1
+ * @property {number} angle
  * @property {number} length2
- * @property {number} angle2
  *
  *
  * @typedef {GlassEntryBase & GlassEntryBaseMouse & GlassEntryTriangleArgs} GlassEntryTriangle
@@ -1284,9 +1283,8 @@ class Glass {
    * @param {number} shapeDefinition.x
    * @param {number} shapeDefinition.y
    * @param {number} shapeDefinition.length1
-   * @param {number} shapeDefinition.angle1
+   * @param {number} shapeDefinition.angle
    * @param {number} shapeDefinition.length2
-   * @param {number} shapeDefinition.angle2
    * @param {number} [shapeDefinition.rotation] In degrees, clockwise with `0` being up, defaults to `0`.
    * @param {GlassDrawCallOptions} options
    * @param {any} [tags]
@@ -1294,8 +1292,7 @@ class Glass {
    */
   triangle(shapeDefinition, options, ...tags) {
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
-    shapeDefinition.angle1 = (((shapeDefinition.angle1 ?? 0) % 360) + 360) % 360
-    shapeDefinition.angle2 = (((shapeDefinition.angle2 ?? 0) % 360) + 360) % 360
+    shapeDefinition.angle = (((shapeDefinition.angle ?? 0) % 360) + 360) % 360
 
     options.lineWidth = options.lineWidth ?? 0
     options.mouseMode = options.mouseMode ?? this.defaultMouseMode
@@ -1316,21 +1313,24 @@ class Glass {
         for (const point of [
           [shapeDefinition.x, shapeDefinition.y],
           [
-            Math.cos((shapeDefinition.angle1 * Math.PI) / 180 + Math.PI * 1.5) * shapeDefinition.length1 +
-              shapeDefinition.x,
-            Math.sin((shapeDefinition.angle1 * Math.PI) / 180 + Math.PI * 1.5) * shapeDefinition.length1 +
-              shapeDefinition.y
+            Math.cos(Math.PI * 1.5) * shapeDefinition.length1 + shapeDefinition.x,
+            Math.sin(Math.PI * 1.5) * shapeDefinition.length1 + shapeDefinition.y
           ],
           [
-            Math.cos((shapeDefinition.angle2 * Math.PI) / 180 + Math.PI * 1.5) * shapeDefinition.length2 +
+            Math.cos((shapeDefinition.angle * Math.PI) / 180 + Math.PI * 1.5) * shapeDefinition.length2 +
               shapeDefinition.x,
-            Math.sin((shapeDefinition.angle2 * Math.PI) / 180 + Math.PI * 1.5) * shapeDefinition.length2 +
+            Math.sin((shapeDefinition.angle * Math.PI) / 180 + Math.PI * 1.5) * shapeDefinition.length2 +
               shapeDefinition.y
           ]
         ]) {
           const cos = Math.cos((shapeDefinition.rotation * Math.PI) / 180)
           const sin = -Math.sin((shapeDefinition.rotation * Math.PI) / 180)
-          const [x, y] = [cos * point[0] + sin * point[1], cos * point[1] - sin * point[0]]
+          let [x, y] = point
+          x -= shapeDefinition.x
+          y -= shapeDefinition.y
+          ;[x, y] = [cos * x + sin * y, cos * y - sin * x]
+          x += shapeDefinition.x
+          y += shapeDefinition.y
           minX = Math.min(minX, x)
           minY = Math.min(minY, y)
           maxX = Math.max(maxX, x)
@@ -1359,12 +1359,12 @@ class Glass {
             y: 0
           },
           {
-            x: Math.cos((this.angle1 * Math.PI) / 180 + Math.PI * 1.5) * this.length1,
-            y: Math.sin((this.angle1 * Math.PI) / 180 + Math.PI * 1.5) * this.length1
+            x: Math.cos(Math.PI * 1.5) * this.length1,
+            y: Math.sin(Math.PI * 1.5) * this.length1
           },
           {
-            x: Math.cos((this.angle2 * Math.PI) / 180 + Math.PI * 1.5) * this.length2,
-            y: Math.sin((this.angle2 * Math.PI) / 180 + Math.PI * 1.5) * this.length2
+            x: Math.cos((this.angle * Math.PI) / 180 + Math.PI * 1.5) * this.length2,
+            y: Math.sin((this.angle * Math.PI) / 180 + Math.PI * 1.5) * this.length2
           }
         ].flatMap(point => [cos * point.x - sin * point.y + this.x, sin * point.x + cos * point.y + this.y])
 
@@ -1422,12 +1422,12 @@ class Glass {
             y: 0
           },
           {
-            x: Math.cos((this.angle1 * Math.PI) / 180 + Math.PI * 1.5) * this.length1,
-            y: Math.sin((this.angle1 * Math.PI) / 180 + Math.PI * 1.5) * this.length1
+            x: Math.cos(Math.PI * 1.5) * this.length1,
+            y: Math.sin(Math.PI * 1.5) * this.length1
           },
           {
-            x: Math.cos((this.angle2 * Math.PI) / 180 + Math.PI * 1.5) * this.length2,
-            y: Math.sin((this.angle2 * Math.PI) / 180 + Math.PI * 1.5) * this.length2
+            x: Math.cos((this.angle * Math.PI) / 180 + Math.PI * 1.5) * this.length2,
+            y: Math.sin((this.angle * Math.PI) / 180 + Math.PI * 1.5) * this.length2
           }
         ].map(point => ({
           x: cos * point.x - sin * point.y + this.x,

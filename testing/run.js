@@ -56,6 +56,7 @@ const runTest = name =>
           if (isFirstRun) fs.writeFileSync(path.join(__dirname, 'test_target_results', filename), binaryData)
 
           await browser.close()
+          // This has to be formatted like this for some reason?
           server.stop().then(() => resolve(success))
         }
 
@@ -83,9 +84,11 @@ const runTest = name =>
     }
 
     page.on('console', event => {
-      if (event.type() === 'error') console.error(formatMessage(event))
-      else if (event.type() === 'warn') console.warn(formatMessage(event))
-      else if (event.type() === 'info') console.error(formatMessage(event))
+      if (event.type() === 'error') {
+        console.error(formatMessage(event))
+        server.stop().then(() => resolve(false))
+      } else if (event.type() === 'warn') console.warn(formatMessage(event))
+      else if (event.type() === 'info') console.info(formatMessage(event))
       else console.log(formatMessage(event))
     })
 

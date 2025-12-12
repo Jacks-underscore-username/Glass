@@ -1,9 +1,18 @@
 ;(async () => {
-  /** @type {(canvas: HTMLCanvasElement)=>Promise<void>}  */
-  // @ts-expect-error
-  const script = (await import('./test.js')).default
   const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('canvas'))
-  await Promise.any([script(canvas), new Promise(r => setTimeout(r, 1000))])
+  const error = await new Promise(async resolve => {
+    setTimeout(() => resolve('Timeout exceeded'), 1000)
+    try {
+      /** @type {(canvas: HTMLCanvasElement)=>Promise<void>}  */
+      // @ts-expect-error
+      const script = (await import('./test.js')).default
+      await script(canvas)
+      resolve('')
+    } catch (error) {
+      resolve(`Test threw error: ${error}`)
+    }
+  })
+  if (error) console.error(error)
   await fetch('/result', {
     method: 'POST',
     headers: {
