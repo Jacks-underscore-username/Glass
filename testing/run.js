@@ -22,7 +22,7 @@ const runTest = name =>
   new Promise(async resolve => {
     const browser = await puppeteer.launch({
       channel: 'chrome',
-      executablePath: `${process.env.BROWSER_PATH}/chromium`
+      executablePath: `${process.env['BROWSER_PATH']}/chromium`
     })
 
     const server = bun.serve({
