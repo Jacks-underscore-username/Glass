@@ -12,16 +12,17 @@ export default /** @param {HTMLCanvasElement} canvas; @returns {Promise<void>} *
       for (let i = 0; i < 3; i++) {
         const radians = (i / 3) * Math.PI * 2 + ((360 / 4) * Math.PI) / 180
 
-        const x = Math.cos(radians) * 20
-        const y = Math.sin(radians) * 20
+        const x = Math.cos(radians) * 10
+        const y = Math.sin(radians) * 10
         glass.triangle(
           {
-            x,
-            y,
-            length1: 30,
-            angle: 90,
-            length2: 30,
-            rotation: (i * 360) / 3 + (360 / 8) * 7
+            x1: x,
+            y1: y,
+            x2: x - 10,
+            y2: y - 10,
+            x3: x + 10,
+            y3: y - 10,
+            rotation: (i * 360) / 3
           },
           {
             color: ['#f003', '#0f03', '#00f3'][i]

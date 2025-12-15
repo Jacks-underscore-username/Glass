@@ -7,70 +7,40 @@ const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('canvas
 
 const glass = new Glass(canvas)
 
-glass.showBounds = true
+// glass.showBounds = true
 // glass.showAreas = true
 
-glass.showAreasOptions.hitCountForMaxColor = 2
+glass.showAreasOptions.hitCountForMaxColor = 3
 
 glass.on('beforeRender', () => {
-  glass.rect(
-    {
-      x: 0,
-      y: 0,
-      width: 100,
-      height: 100,
-      coordinateMode: 'center'
-    },
-    '#999'
-  )
-  glass.arc(
-    {
-      x: 10,
-      y: 0,
-      radius: 1
-    },
-    '#000'
-  )
-  glass.rect(
-    {
-      coordinateMode: 'center',
-      x: 10,
-      y: 0,
-      width: 10,
-      height: 5,
-      rotation: ((Date.now() / 1000) * 360) / 10
-    },
-    '#0f06'
-  )
-  glass.rect(
-    {
-      coordinateMode: 'center',
-      x: 10,
-      y: 0,
-      width: 10,
-      height: 5
-    },
-    '#f006'
-  )
-  // glass.triangle(
+  // glass.rect(
   //   {
-  //     x: 20,
-  //     y: 20,
-  //     length1: 20,
-  //     length2: 30,
-  //     angle: 90,
-  //     rotation: ((Date.now() / 1000) * 360) / 10
+  //     x: 0,
+  //     y: 0,
+  //     width: 100,
+  //     height: 100,
+  //     coordinateMode: 'center'
   //   },
-  //   '#666'
+  //   '#999'
   // )
-  // glass.triangle(
-  //   {
-  //     x: 20,
-  //     y: 20,
-  //     length1: 20,
-  //     length2: 30,
-  //     angle: 90
-  //   },
-  //   '#f003'
-  // )
+  for (let i = 0; i < 3; i++) {
+    const radians = (i / 3) * Math.PI * 2 + ((360 / 4) * Math.PI) / 180
+
+    const x = Math.cos(radians) * 10
+    const y = Math.sin(radians) * 10
+    glass.triangle(
+      {
+        x1: x,
+        y1: y,
+        x2: x - 10,
+        y2: y - 10,
+        x3: x + 10,
+        y3: y - 10,
+        rotation: (i * 360) / 3
+      },
+      {
+        color: ['#f003', '#0f03', '#00f3'][i]
+      }
+    )
+  }
 })

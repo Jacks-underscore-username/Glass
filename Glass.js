@@ -79,12 +79,14 @@ import Color from './Color.js'
  *
  * @typedef {object} GlassEntryTriangleArgs
  * @property {'triangle'} type
- * @property {number} length1
- * @property {number} angle
- * @property {number} length2
+ * @property {number} x1
+ * @property {number} y1
+ * @property {number} x2
+ * @property {number} y2
+ * @property {number} x3
+ * @property {number} y3
  *
- *
- * @typedef {GlassEntryBase & GlassEntryBaseMouse & GlassEntryTriangleArgs} GlassEntryTriangle
+ * @typedef {Omit<GlassEntryBase, 'x' | 'y'> & GlassEntryBaseMouse & GlassEntryTriangleArgs} GlassEntryTriangle
  *
  *
  * @typedef {GlassEntryRect | GlassEntryArc | GlassEntryEllipse | GlassEntryText | GlassEntryTriangle} GlassEntry
@@ -1301,11 +1303,12 @@ class Glass {
   /**
    * Create a triangle at x/y, with "legs" coming from that point to form two sides, with the final side connecting both legs ends.
    * @param {object} shapeDefinition
-   * @param {number} shapeDefinition.x
-   * @param {number} shapeDefinition.y
-   * @param {number} shapeDefinition.length1
-   * @param {number} shapeDefinition.angle
-   * @param {number} shapeDefinition.length2
+   * @param {number} shapeDefinition.x1
+   * @param {number} shapeDefinition.y1
+   * @param {number} shapeDefinition.x2
+   * @param {number} shapeDefinition.y2
+   * @param {number} shapeDefinition.x3
+   * @param {number} shapeDefinition.y3
    * @param {number} [shapeDefinition.rotation] In degrees, clockwise with `0` being up, defaults to `0`.
    * @param {GlassDrawCallOptions | GlassColor} options
    * @param {any} [tags]
@@ -1314,7 +1317,6 @@ class Glass {
   triangle(shapeDefinition, options, ...tags) {
     options = asOptions(options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
-    shapeDefinition.angle = (((shapeDefinition.angle ?? 0) % 360) + 360) % 360
 
     options.lineWidth = options.lineWidth ?? 0
     options.mouseMode = options.mouseMode ?? this.defaultMouseMode
@@ -1332,31 +1334,30 @@ class Glass {
         let minY = Number.POSITIVE_INFINITY
         let maxX = Number.NEGATIVE_INFINITY
         let maxY = Number.NEGATIVE_INFINITY
+        const angleInRadians = (shapeDefinition.rotation * Math.PI) / 180
+        const cos = Math.cos(angleInRadians)
+        const sin = Math.sin(angleInRadians)
         for (const point of [
-          [shapeDefinition.x, shapeDefinition.y],
-          [
-            Math.cos(Math.PI * 1.5) * shapeDefinition.length1 + shapeDefinition.x,
-            Math.sin(Math.PI * 1.5) * shapeDefinition.length1 + shapeDefinition.y
-          ],
-          [
-            Math.cos((shapeDefinition.angle * Math.PI) / 180 + Math.PI * 1.5) * shapeDefinition.length2 +
-              shapeDefinition.x,
-            Math.sin((shapeDefinition.angle * Math.PI) / 180 + Math.PI * 1.5) * shapeDefinition.length2 +
-              shapeDefinition.y
-          ]
-        ]) {
-          const cos = Math.cos((shapeDefinition.rotation * Math.PI) / 180)
-          const sin = -Math.sin((shapeDefinition.rotation * Math.PI) / 180)
-          let [x, y] = point
-          x -= shapeDefinition.x
-          y -= shapeDefinition.y
-          ;[x, y] = [cos * x + sin * y, cos * y - sin * x]
-          x += shapeDefinition.x
-          y += shapeDefinition.y
-          minX = Math.min(minX, x)
-          minY = Math.min(minY, y)
-          maxX = Math.max(maxX, x)
-          maxY = Math.max(maxY, y)
+          {
+            x: shapeDefinition.x1,
+            y: shapeDefinition.y1
+          },
+          {
+            x: shapeDefinition.x2,
+            y: shapeDefinition.y2
+          },
+          {
+            x: shapeDefinition.x3,
+            y: shapeDefinition.y3
+          }
+        ].map(point => [
+          cos * (point.x - shapeDefinition.x1) - sin * (point.y - shapeDefinition.y1) + shapeDefinition.x1,
+          sin * (point.x - shapeDefinition.x1) + cos * (point.y - shapeDefinition.y1) + shapeDefinition.y1
+        ])) {
+          minX = Math.min(minX, point[0])
+          minY = Math.min(minY, point[1])
+          maxX = Math.max(maxX, point[0])
+          maxY = Math.max(maxY, point[1])
         }
         return {
           minX: minX - options.lineWidth / 2,
@@ -1377,18 +1378,21 @@ class Glass {
         /** @type {number[]} */
         const [x1, y1, x2, y2, x3, y3] = [
           {
-            x: 0,
-            y: 0
+            x: this.x1,
+            y: this.y1
           },
           {
-            x: Math.cos(Math.PI * 1.5) * this.length1,
-            y: Math.sin(Math.PI * 1.5) * this.length1
+            x: this.x2,
+            y: this.y2
           },
           {
-            x: Math.cos((this.angle * Math.PI) / 180 + Math.PI * 1.5) * this.length2,
-            y: Math.sin((this.angle * Math.PI) / 180 + Math.PI * 1.5) * this.length2
+            x: this.x3,
+            y: this.y3
           }
-        ].flatMap(point => [cos * point.x - sin * point.y + this.x, sin * point.x + cos * point.y + this.y])
+        ].flatMap(point => [
+          cos * (point.x - this.x1) - sin * (point.y - this.y1) + this.x1,
+          sin * (point.x - this.x1) + cos * (point.y - this.y1) + this.y1
+        ])
 
         const v0x = x3 - x1
         const v0y = y3 - y1
@@ -1413,10 +1417,13 @@ class Glass {
        * @param {number} scale
        */
       scale(scale) {
-        this.x *= scale
-        this.y *= scale
-        this.length1 *= scale
-        this.length2 *= scale
+        this.x1 *= scale
+        this.y1 *= scale
+        this.x2 *= scale
+        this.y2 *= scale
+        this.x3 *= scale
+        this.y3 *= scale
+
         this.lineWidth *= scale
         scaleBounds(scale, this.bounds)
         if (options.shadowBlur) options.shadowBlur *= scale
@@ -1426,8 +1433,13 @@ class Glass {
        * @param {number} y
        */
       shift(x, y) {
-        this.x += x
-        this.y += y
+        this.x1 += x
+        this.y1 += y
+        this.x2 += x
+        this.y2 += y
+        this.x3 += x
+        this.y3 += y
+
         shiftBounds(x, y, this.bounds)
       },
       /** @param {CanvasRenderingContext2D} ctx */
@@ -1440,26 +1452,28 @@ class Glass {
 
         const points = [
           {
-            x: 0,
-            y: 0
+            x: this.x1,
+            y: this.y1
           },
           {
-            x: Math.cos(Math.PI * 1.5) * this.length1,
-            y: Math.sin(Math.PI * 1.5) * this.length1
+            x: this.x2,
+            y: this.y2
           },
           {
-            x: Math.cos((this.angle * Math.PI) / 180 + Math.PI * 1.5) * this.length2,
-            y: Math.sin((this.angle * Math.PI) / 180 + Math.PI * 1.5) * this.length2
+            x: this.x3,
+            y: this.y3
           }
         ].map(point => ({
-          x: cos * point.x - sin * point.y + this.x,
-          y: sin * point.x + cos * point.y + this.y
+          x: cos * (point.x - this.x1) - sin * (point.y - this.y1) + this.x1,
+          y: sin * (point.x - this.x1) + cos * (point.y - this.y1) + this.y1
         }))
 
         ctx.moveTo(points[0].x, points[0].y)
 
         for (let i = 1; i <= points.length; i++) ctx.lineTo(points[i % points.length].x, points[i % points.length].y)
         ctxClose(ctx, this)
+
+        // throw 0
       }
     }
     this._renderStack.push(entry)
