@@ -1,3 +1,5 @@
+// The website here is just for dev reasons, and is not needed for Glass at all
+
 import Color from './Color.js'
 import Glass from './Glass.js'
 

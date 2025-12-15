@@ -146,6 +146,20 @@ import Color from './Color.js'
  */
 
 /**
+ * @template {(GlassColor | GlassDrawCallOptions) | (GlassColor | GlassDrawCallOptionsNoMouse)} T
+ * @param {T} options
+ * @returns {Exclude<T, GlassColor>}
+ */
+const asOptions = options => {
+  // @ts-expect-error
+  if (typeof options === 'string') return { color: options }
+  // @ts-expect-error
+  if (Object.keys(options).includes('colorStops')) return { color: options }
+  // @ts-expect-error
+  return options
+}
+
+/**
  * Type guard to check if an entry has the required mouse interaction methods.
  * @param {GlassEntry} entry
  * @returns {entry is GlassEntry & { hasPoint: (x: number, y: number) => boolean, onClick: () => any }}
@@ -742,11 +756,12 @@ class Glass {
    * @param {number} shapeDefinition.height
    * @param {number} [shapeDefinition.rotation] In degrees, clockwise with `0` being up, defaults to `0`.
    * @param {'corner' | 'center'} [shapeDefinition.coordinateMode] What part of the rect the x/y is, `'corner'` means top left corner, defaults to `'corner'`.
-   * @param {GlassDrawCallOptions} options
+   * @param {GlassDrawCallOptions | GlassColor} options
    * @param {any} [tags]
    * @return {GlassEntryRect}
    */
   rect(shapeDefinition, options, ...tags) {
+    options = asOptions(options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
     shapeDefinition.coordinateMode = shapeDefinition.coordinateMode ?? 'corner'
     options.lineWidth = options.lineWidth ?? 0
@@ -893,11 +908,12 @@ class Glass {
    * @param {number} [shapeDefinition.rotation] (this property exists only for continuity reasons, and is just added to startAngle / endAngle then set back to 0) In degrees, clockwise with `0` being up, defaults to `0`.
    * @param {number} [shapeDefinition.startAngle] In degrees, clockwise with `0` being up, defaults to `0`.
    * @param {number} [shapeDefinition.endAngle] In degrees, clockwise with `0` being up, defaults to `0`.
-   * @param {GlassDrawCallOptions} options
+   * @param {GlassDrawCallOptions | GlassColor} options
    * @param {any} [tags]
    * @return {GlassEntryArc}
    */
   arc(shapeDefinition, options, ...tags) {
+    options = asOptions(options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
     shapeDefinition.startAngle = ((((shapeDefinition.startAngle ?? 0) + shapeDefinition.rotation) % 360) + 360) % 360
     shapeDefinition.endAngle = ((((shapeDefinition.endAngle ?? 0) + shapeDefinition.rotation) % 360) + 360) % 360
@@ -1031,11 +1047,12 @@ class Glass {
    * @param {number} [shapeDefinition.rotation] In degrees, clockwise with `0` being up, defaults to `0`.
    * @param {number} [shapeDefinition.startAngle] In degrees, clockwise with `0` being up, defaults to `0`.
    * @param {number} [shapeDefinition.endAngle] In degrees, clockwise with `0` being up, defaults to `0`.
-   * @param {GlassDrawCallOptions} options
+   * @param {GlassDrawCallOptions | GlassColor} options
    * @param {any} [tags]
    * @return {GlassEntryEllipse}
    */
   ellipse(shapeDefinition, options, ...tags) {
+    options = asOptions(options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
     shapeDefinition.startAngle = (((shapeDefinition.startAngle ?? 0) % 360) + 360) % 360
     shapeDefinition.endAngle = (((shapeDefinition.endAngle ?? 0) % 360) + 360) % 360
@@ -1175,62 +1192,63 @@ class Glass {
   }
 
   /**
-   * @param {object} textDefinition
-   * @param {number} textDefinition.x
-   * @param {number} textDefinition.y
-   * @param {string} textDefinition.text
-   * @param {'top'|'middle'|'bottom'} [textDefinition.baseline] Defaults to `'bottom'`.
-   * @param {'left'|'center'|'right'} [textDefinition.alignment] Defaults to `'left'`.
-   * @param {string} [textDefinition.font] Defaults to `'Arial'`.
-   * @param {number} textDefinition.size
-   * @param {number} [textDefinition.rotation] In degrees, clockwise with `0` being up, defaults to `0`.
-   * @param {number} [textDefinition.maxWidth] Defaults to none.
-   * @param {GlassDrawCallOptionsNoMouse} options
+   * @param {object} shapeDefinition
+   * @param {number} shapeDefinition.x
+   * @param {number} shapeDefinition.y
+   * @param {string} shapeDefinition.text
+   * @param {'top'|'middle'|'bottom'} [shapeDefinition.baseline] Defaults to `'bottom'`.
+   * @param {'left'|'center'|'right'} [shapeDefinition.alignment] Defaults to `'left'`.
+   * @param {string} [shapeDefinition.font] Defaults to `'Arial'`.
+   * @param {number} shapeDefinition.size
+   * @param {number} [shapeDefinition.rotation] In degrees, clockwise with `0` being up, defaults to `0`.
+   * @param {number} [shapeDefinition.maxWidth] Defaults to none.
+   * @param {GlassDrawCallOptionsNoMouse | GlassColor} options
    * @param {any} [tags]
    * @return {GlassEntryText}
    */
-  text(textDefinition, options, ...tags) {
+  text(shapeDefinition, options, ...tags) {
+    options = asOptions(options)
     options.lineWidth = options.lineWidth ?? 0
-    textDefinition.text = String(textDefinition.text)
-    textDefinition.baseline = textDefinition.baseline ?? 'bottom'
-    textDefinition.alignment = textDefinition.alignment ?? 'left'
-    textDefinition.font = textDefinition.font ?? 'Arial'
-    textDefinition.rotation = textDefinition.rotation ?? 0
-    this.ctx.font = `${textDefinition.size}px ${textDefinition.font}`
+    shapeDefinition.text = String(shapeDefinition.text)
+    shapeDefinition.baseline = shapeDefinition.baseline ?? 'bottom'
+    shapeDefinition.alignment = shapeDefinition.alignment ?? 'left'
+    shapeDefinition.font = shapeDefinition.font ?? 'Arial'
+    shapeDefinition.rotation = shapeDefinition.rotation ?? 0
+    this.ctx.font = `${shapeDefinition.size}px ${shapeDefinition.font}`
     /** @type {GlassEntryText} */
     const entry = {
       type: 'text',
       mouseMode: 'ignore',
-      ...textDefinition,
-      rotation: textDefinition.rotation,
-      baseline: textDefinition.baseline,
-      alignment: textDefinition.alignment,
-      font: textDefinition.font,
+      ...shapeDefinition,
+      rotation: shapeDefinition.rotation,
+      baseline: shapeDefinition.baseline,
+      alignment: shapeDefinition.alignment,
+      font: shapeDefinition.font,
       ...options,
       lineWidth: options.lineWidth,
       tags,
       bounds: (() => {
-        let minX = textDefinition.x - options.lineWidth / 2
-        let minY = textDefinition.y - options.lineWidth / 2
+        let minX = shapeDefinition.x - options.lineWidth / 2
+        let minY = shapeDefinition.y - options.lineWidth / 2
         const width = Math.min(
-          this.ctx.measureText(textDefinition.text).width,
-          textDefinition.maxWidth ?? Number.POSITIVE_INFINITY
+          this.ctx.measureText(shapeDefinition.text).width,
+          shapeDefinition.maxWidth ?? Number.POSITIVE_INFINITY
         )
-        if (textDefinition.baseline === 'middle') minY -= textDefinition.size / 2
-        else if (textDefinition.baseline === 'bottom') minY -= textDefinition.size
-        if (textDefinition.alignment === 'center') minX -= width / 2
-        else if (textDefinition.alignment === 'right') minX -= width
+        if (shapeDefinition.baseline === 'middle') minY -= shapeDefinition.size / 2
+        else if (shapeDefinition.baseline === 'bottom') minY -= shapeDefinition.size
+        if (shapeDefinition.alignment === 'center') minX -= width / 2
+        else if (shapeDefinition.alignment === 'right') minX -= width
 
         return rotateBounds(
-          textDefinition.x,
-          textDefinition.y,
+          shapeDefinition.x,
+          shapeDefinition.y,
           {
             minX,
             minY,
             maxX: minX + width + options.lineWidth / 2,
-            maxY: minY + textDefinition.size + options.lineWidth / 2
+            maxY: minY + shapeDefinition.size + options.lineWidth / 2
           },
-          textDefinition.rotation
+          shapeDefinition.rotation
         )
       })(),
       /**
@@ -1267,7 +1285,8 @@ class Glass {
         }
         ctx.textAlign = this.alignment
         ctx.textBaseline = this.baseline
-        ctx.font = `${this.size}px ${this.font}`
+        const font = `${this.size}px ${this.font}`
+        ctx.font = font
         ctxClose(ctx, this, true)
         if (this.lineWidth) ctx.strokeText(this.text, this.x, this.y, this.maxWidth)
         else ctx.fillText(this.text, this.x, this.y, this.maxWidth)
@@ -1287,11 +1306,12 @@ class Glass {
    * @param {number} shapeDefinition.angle
    * @param {number} shapeDefinition.length2
    * @param {number} [shapeDefinition.rotation] In degrees, clockwise with `0` being up, defaults to `0`.
-   * @param {GlassDrawCallOptions} options
+   * @param {GlassDrawCallOptions | GlassColor} options
    * @param {any} [tags]
    * @return {GlassEntryTriangle}
    */
   triangle(shapeDefinition, options, ...tags) {
+    options = asOptions(options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
     shapeDefinition.angle = (((shapeDefinition.angle ?? 0) % 360) + 360) % 360
 
