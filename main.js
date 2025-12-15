@@ -21,7 +21,7 @@ glass.on('beforeRender', () => {
       height: 100,
       coordinateMode: 'center'
     },
-    { color: '#999' }
+    '#999'
   )
   glass.arc(
     {
@@ -29,7 +29,7 @@ glass.on('beforeRender', () => {
       y: 0,
       radius: 1
     },
-    { color: '#000' }
+    '#000'
   )
   glass.rect(
     {
@@ -40,7 +40,7 @@ glass.on('beforeRender', () => {
       height: 5,
       rotation: ((Date.now() / 1000) * 360) / 10
     },
-    { color: '#0f06' }
+    '#0f06'
   )
   glass.rect(
     {
@@ -50,7 +50,7 @@ glass.on('beforeRender', () => {
       width: 10,
       height: 5
     },
-    { color: '#f006' }
+    '#f006'
   )
   // glass.triangle(
   //   {
@@ -61,7 +61,7 @@ glass.on('beforeRender', () => {
   //     angle: 90,
   //     rotation: ((Date.now() / 1000) * 360) / 10
   //   },
-  //   { color: '#666' }
+  //   '#666'
   // )
   // glass.triangle(
   //   {
@@ -71,6 +71,6 @@ glass.on('beforeRender', () => {
   //     length2: 30,
   //     angle: 90
   //   },
-  //   { color: '#f003' }
+  //   '#f003'
   // )
 })

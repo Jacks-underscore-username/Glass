@@ -395,7 +395,8 @@ class Glass {
         x <= entry.bounds.maxX &&
         y >= entry.bounds.minY &&
         y <= entry.bounds.maxY &&
-        entry.hasPoint(x, y)
+        entry.hasPoint(x, y) &&
+        entry.onClick
       ) {
         entry.onClick()
         if (entry.mouseMode !== 'passthrough') break
