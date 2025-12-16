@@ -119,7 +119,7 @@ import Color from './Color.js'
  *
  * @typedef {object} GlassColorGradientBase
  * @property {{t:number,color:string}[]} colorStops
- * @property {(t:number,color:string)=>any} addColorStop
+ * @property {(t:number,color:string)=>GlassColorGradientBase} addColorStop
  *
  *
  * @typedef {GlassColorGradientBase & (GlassColorGradientLinear | GlassColorGradientRadial | GlassColorGradientConic)} GlassColorGradient
@@ -694,10 +694,12 @@ class Glass {
     /**
      * @param {number} t
      * @param {string} color
+     * @returns {GlassColorGradientBase}
      */
     addColorStop(t, color) {
       this.colorStops.push({ t, color })
       this.colorStops.sort((a, b) => a.t - b.t)
+      return this
     }
   })
 
@@ -722,10 +724,12 @@ class Glass {
     /**
      * @param {number} t
      * @param {string} color
+     * @returns {GlassColorGradientBase}
      */
     addColorStop(t, color) {
       this.colorStops.push({ t, color })
       this.colorStops.sort((a, b) => a.t - b.t)
+      return this
     }
   })
 
@@ -744,10 +748,12 @@ class Glass {
     /**
      * @param {number} t
      * @param {string} color
+     * @returns {GlassColorGradientBase}
      */
     addColorStop(t, color) {
       this.colorStops.push({ t, color })
       this.colorStops.sort((a, b) => a.t - b.t)
+      return this
     }
   })
 
