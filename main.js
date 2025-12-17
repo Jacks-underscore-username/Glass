@@ -1,6 +1,6 @@
 // The website here is just for dev reasons, and is not needed for Glass at all
 
-import Color from './Color.js'
+import Color from './Color/Color.js'
 import Glass from './Glass.js'
 
 const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('canvas'))

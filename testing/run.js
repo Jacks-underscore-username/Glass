@@ -71,6 +71,7 @@ const runTest = name =>
      * @returns {string}
      */
     const formatMessage = event => {
+      // throw console.log(event)
       const type = `[Console ${event.type()[0].toUpperCase()}${event.type().slice(1)}]`
       const trace = event
         .stackTrace()

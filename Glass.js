@@ -1,4 +1,4 @@
-import Color from './Color.js'
+import Color from '../Color/Color.js'
 
 /**
  * @typedef {string | GlassColorGradient | CanvasGradient} GlassColor
@@ -17,7 +17,6 @@ import Color from './Color.js'
  * @property {string} [shadowColor]
  * @property {number} [shadowOffsetX]
  * @property {number} [shadowOffsetY]
- * @property {boolean} [static]
  * @property {number} [layer]
  *
  * @property {any[]} tags
@@ -477,15 +476,6 @@ class Glass {
       let minY = Number.POSITIVE_INFINITY
       let maxX = Number.NEGATIVE_INFINITY
       let maxY = Number.NEGATIVE_INFINITY
-      for (const entry of renderStack) {
-        if (!entry.static) {
-          const bounds = entry.bounds
-          minX = Math.min(minX, bounds.minX)
-          minY = Math.min(minY, bounds.minY)
-          maxX = Math.max(maxX, bounds.maxX)
-          maxY = Math.max(maxY, bounds.maxY)
-        }
-      }
       if (Number.isNaN(minX + minY + maxX + maxY)) throw new Error('Invalid bounds on renderstack item.')
       if (minX === Number.POSITIVE_INFINITY) minX = minY = maxX = maxY = 0
       this.viewportX = (minX + maxX) / 2
@@ -497,23 +487,6 @@ class Glass {
     const scale = Math.min(canvas.width / this.viewportWidth, canvas.height / this.viewportHeight)
     const shiftX = this.viewportWidth / 2 - this.viewportX
     const shiftY = this.viewportHeight / 2 - this.viewportY
-    const staticScale = Math.min(
-      (this.viewportWidth * scale) / this.staticPaneWidth,
-      (this.viewportHeight * scale) / this.staticPaneHeight
-    )
-    const staticShiftX =
-      this.staticPaneMode === 'left'
-        ? 0
-        : this.staticPaneMode === 'right'
-          ? this.viewportWidth * scale - this.staticPaneWidth * staticScale
-          : (this.viewportWidth * scale - this.staticPaneWidth * staticScale) / 2
-    const staticShiftY =
-      this.staticPaneMode === 'top'
-        ? 0
-        : this.staticPaneMode === 'bottom'
-          ? this.viewportHeight * scale - this.staticPaneHeight * staticScale
-          : (this.viewportHeight * scale - this.staticPaneHeight * staticScale) / 2
-    for (const entry of renderStack) if (entry.static) entry.scale(staticScale)
     for (const listener of this._listeners.beforeShift)
       listener({
         canvas,
@@ -525,9 +498,7 @@ class Glass {
         canvasWidth: canvas.width,
         canvasHeight: canvas.height
       })
-    for (const entry of renderStack)
-      if (entry.static) entry.shift(staticShiftX, staticShiftY)
-      else entry.shift(shiftX, shiftY)
+    for (const entry of renderStack) entry.shift(shiftX, shiftY)
     for (const listener of this._listeners.beforeScale)
       listener({
         canvas,
@@ -539,7 +510,7 @@ class Glass {
         canvasWidth: canvas.width,
         canvasHeight: canvas.height
       })
-    for (const entry of renderStack) if (!entry.static) entry.scale(scale)
+    for (const entry of renderStack) entry.scale(scale)
     for (const listener of this._listeners.afterScale)
       listener({
         canvas,
@@ -1478,8 +1449,6 @@ class Glass {
 
         for (let i = 1; i <= points.length; i++) ctx.lineTo(points[i % points.length].x, points[i % points.length].y)
         ctxClose(ctx, this)
-
-        // throw 0
       }
     }
     this._renderStack.push(entry)
