@@ -1,4 +1,4 @@
-import Color from '../Color/Color.js'
+import Color from './Color/Color.js'
 
 /**
  * @typedef {string | GlassColorGradient | CanvasGradient} GlassColor
@@ -410,7 +410,7 @@ class Glass {
 
   /** @type {{color: Color, lineWidth: number}} */
   showBoundsOptions = {
-    color: new Color('0f0'),
+    color: Color.fromHex('0f0'),
     lineWidth: 2.5
   }
 
@@ -420,11 +420,11 @@ class Glass {
   /** @type {{hitColor: Color, hitCountForMaxColor: number, defaultColor: Color, targetCells: number}} */
   showAreasOptions = {
     /** @type {Color} */
-    hitColor: new Color('0f0'),
+    hitColor: Color.fromHex('0f0'),
     /** @type {number} */
     hitCountForMaxColor: 10,
     /** @type {Color} */
-    defaultColor: new Color('f00'),
+    defaultColor: Color.fromHex('f00'),
     /** @type {number} */
     targetCells: 10_000
   }
@@ -476,6 +476,13 @@ class Glass {
       let minY = Number.POSITIVE_INFINITY
       let maxX = Number.NEGATIVE_INFINITY
       let maxY = Number.NEGATIVE_INFINITY
+      for (const entry of renderStack) {
+        const bounds = entry.bounds
+        minX = Math.min(minX, bounds.minX)
+        minY = Math.min(minY, bounds.minY)
+        maxX = Math.max(maxX, bounds.maxX)
+        maxY = Math.max(maxY, bounds.maxY)
+      }
       if (Number.isNaN(minX + minY + maxX + maxY)) throw new Error('Invalid bounds on renderstack item.')
       if (minX === Number.POSITIVE_INFINITY) minX = minY = maxX = maxY = 0
       this.viewportX = (minX + maxX) / 2

@@ -7,9 +7,8 @@ const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('canvas
 
 const glass = new Glass(canvas)
 
-// glass.showBounds = true
-// glass.showAreas = true
-
+glass.showBounds = true
+glass.showAreas = true
 glass.showAreasOptions.hitCountForMaxColor = 3
 
 glass.on('beforeRender', () => {
