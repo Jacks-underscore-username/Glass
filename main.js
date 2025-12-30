@@ -7,29 +7,22 @@ const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('canvas
 
 const glass = new Glass(canvas)
 
-glass.showBounds = true
+// glass.showBounds = true
 // glass.showAreas = true
-// glass.showAreasOptions.hitCountForMaxColor = 3
+// glass.showAreasOptions.hitCountForMaxColor = 2
+// glass.showAreasOptions.targetCells = 80000
 
 glass.on('beforeRender', () => {
-  glass.rect(
-    {
-      x: 0,
-      y: 0,
-      width: 100,
-      height: 100,
-      coordinateMode: 'center'
-    },
-    '#999'
-  )
+  // glass.rect(
+  //   {
+  //     x: 0,
+  //     y: 0,
+  //     width: 200,
+  //     height: 200,
+  //     coordinateMode: 'center'
+  //   },
+  //   '#999'
+  // )
 
-  glass.line(
-    {
-      x1: 0,
-      y1: 0,
-      x2: Math.cos(((((Date.now() / 1000) * 360) / 10) * Math.PI) / 180) * 25,
-      y2: Math.sin(((((Date.now() / 1000) * 360) / 10) * Math.PI) / 180) * 25
-    },
-    { color: '#0f0', lineWidth: 5, lineCap: 'round' }
-  )
+  glass.line({ x1: 0, y1: 0, x2: 100, y2: 100 }, { color: '#0f06', lineWidth: 5 })
 })

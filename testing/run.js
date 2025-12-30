@@ -47,14 +47,15 @@ const runTest = name =>
           if (!fs.existsSync(path.join(__dirname, 'test_target_results')))
             fs.mkdirSync(path.join(__dirname, 'test_target_results'))
           const isFirstRun = !fs.existsSync(path.join(__dirname, 'test_target_results', filename))
-          const target = fs.readFileSync(path.join(__dirname, 'test_target_results', filename))
-          const success = isFirstRun || target.toString() === binaryData.toString()
+          const success =
+            isFirstRun ||
+            fs.readFileSync(path.join(__dirname, 'test_target_results', filename)).toString() === binaryData.toString()
           if (!success) {
             if (!fs.existsSync(path.join(__dirname, 'failed_test_compares')))
               fs.mkdirSync(path.join(__dirname, 'failed_test_compares'))
             if (!fs.existsSync(path.join(__dirname, 'failed_test_results')))
               fs.mkdirSync(path.join(__dirname, 'failed_test_results'))
-            const targetImg = PNG.sync.read(target)
+            const targetImg = PNG.sync.read(fs.readFileSync(path.join(__dirname, 'test_target_results', filename)))
             const resultImg = PNG.sync.read(binaryData)
             const { width, height } = targetImg
             const diff = new PNG({ width, height })

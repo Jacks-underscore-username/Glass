@@ -176,6 +176,18 @@ const asOptions = options => {
 }
 
 /**
+ * @template {GlassDrawCallOptions | GlassDrawCallOptionsNoMouse} T
+ * @param {Glass} glass
+ * @param {T} options
+ * @returns {T}
+ */
+const fillDefaultOptions = (glass, options) => {
+  options.lineCap = options.lineCap ?? glass.defaultLineCap
+  options.lineJoin = options.lineJoin ?? glass.defaultLineJoin
+  return options
+}
+
+/**
  * Type guard to check if an entry has the required mouse interaction methods.
  * @param {GlassEntry} entry
  * @returns {entry is GlassEntry & { hasPoint: (x: number, y: number) => boolean, onClick: () => any }}
@@ -290,6 +302,138 @@ const shiftBounds = (x, y, bounds) => {
   bounds.minY += y
   bounds.maxX += x
   bounds.maxY += y
+}
+
+/**
+ * @param {number} px
+ * @param {number} py
+ * @param {number} ax
+ * @param {number} ay
+ * @param {number} radius
+ * @param {number} [startAngle]
+ * @param {number} [endAngle]
+ * @returns {boolean}
+ */
+const isPointInArc = (px, py, ax, ay, radius, startAngle = 0, endAngle = 360) => {
+  const translatedX = px - ax
+  const translatedY = py - ay
+
+  if (translatedX ** 2 + translatedY ** 2 > radius ** 2) return false
+
+  if (startAngle === endAngle % 360) return true
+
+  const pointAngle = ((Math.atan2(translatedY, translatedX) * 180) / Math.PI + 360) % 360
+
+  startAngle = (startAngle + 270) % 360
+  endAngle = (endAngle + 270) % 360
+
+  if (startAngle > endAngle) return pointAngle >= startAngle || pointAngle <= endAngle
+  return pointAngle >= startAngle && pointAngle <= endAngle
+}
+
+/**
+ * @param {number} px
+ * @param {number} py
+ * @param {number} ax
+ * @param {number} ay
+ * @param {number} radiusX
+ * @param {number} radiusY
+ * @param {number} startAngle
+ * @param {number} endAngle
+ * @param {number} rotation
+ * @returns {boolean}
+ */
+const isPointInEllipse = (px, py, ax, ay, radiusX, radiusY, startAngle, endAngle, rotation) => {
+  px -= ax
+  py -= ay
+  const ratio = radiusX / radiusY
+  const radians = (Math.PI / 180) * rotation
+  const cos = Math.cos(radians)
+  const sin = Math.sin(radians)
+  ;[px, py] = [cos * px + sin * py, cos * py - sin * px]
+  py *= ratio
+  const distance = Math.sqrt(px ** 2 + py ** 2)
+  if (distance > radiusX) return false
+  if (startAngle === endAngle % 360) return true
+  const angle = (-((Math.atan2(px, py) / Math.PI) * 180) + 360 + 180) % 360
+  const normalizedStartAngle = startAngle % 360
+  const normalizedEndAngle = endAngle % 360
+  if (normalizedStartAngle > normalizedEndAngle) return angle >= normalizedStartAngle || angle <= normalizedEndAngle
+  return angle >= normalizedStartAngle && angle <= normalizedEndAngle
+}
+
+/**
+ * @param {number} px
+ * @param {number} py
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} radians
+ * @returns {{ x: number, y: number }}
+ */
+const rotatePoint = (px, py, cx, cy, radians) => {
+  const x = px - cx
+  const y = py - cy
+  return {
+    x: Math.cos(radians) * x - Math.sin(radians) * y + cx,
+    y: Math.sin(radians) * x + Math.cos(radians) * y + cy
+  }
+}
+
+/**
+ * @param {number} x1
+ * @param {number} y1
+ * @param {number} x2
+ * @param {number} y2
+ * @returns {number}
+ */
+const distanceBetweenPoints = (x1, y1, x2, y2) => Math.sqrt(Math.abs(x1 - x2) ** 2 + Math.abs(y1 - y2) ** 2)
+
+/**
+ * @param {number} px
+ * @param {number} py
+ * @param {number} lx1
+ * @param {number} ly1
+ * @param {number} lx2
+ * @param {number} ly2
+ * @returns {number}
+ */
+const distanceToLine = (px, py, lx1, ly1, lx2, ly2) => {
+  const lineLengthSq = (lx2 - lx1) ** 2 + (ly2 - ly1) ** 2
+
+  const t = ((px - lx1) * (lx2 - lx1) + (py - ly1) * (ly2 - ly1)) / lineLengthSq
+
+  if (t < 0) return distanceBetweenPoints(px, py, lx1, ly1)
+
+  if (t > 1) return distanceBetweenPoints(px, py, lx2, ly2)
+
+  const closestX = lx1 + t * (lx2 - lx1)
+  const closestY = ly1 + t * (ly2 - ly1)
+
+  return distanceBetweenPoints(px, py, closestX, closestY)
+}
+
+/**
+ * @param {number} px
+ * @param {number} py
+ * @param {number} rx
+ * @param {number} ry
+ * @param {number} width
+ * @param {number} height
+ * @param {number} radians
+ * @param {'corner' | 'center'} coordinateMode
+ * @returns {boolean}
+ */
+const isPointInRect = (px, py, rx, ry, width, height, radians, coordinateMode) => {
+  const x = px - rx
+  const y = py - ry
+  const rotatedX = x * Math.cos(-radians) - y * Math.sin(-radians)
+  const rotatedY = x * Math.sin(-radians) + y * Math.cos(-radians)
+  px = rotatedX + x
+  py = rotatedY + y
+
+  return coordinateMode === 'corner'
+    ? px >= x && px <= x + width && py >= y && py <= y + height
+    : px >= x - width / 2 && px <= x + width / 2 && py >= y - height / 2 && py <= y + height / 2
 }
 
 /**
@@ -771,6 +915,7 @@ class Glass {
   rect(shapeDefinition, options, ...tags) {
     const instance = this
     options = asOptions(options)
+    fillDefaultOptions(this, options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
     shapeDefinition.coordinateMode = shapeDefinition.coordinateMode ?? 'corner'
     options.lineWidth = options.lineWidth ?? 0
@@ -835,19 +980,16 @@ class Glass {
        * @returns {boolean}
        */
       hasPoint(px, py) {
-        const x = px - this.x
-        const y = py - this.y
-        const rotatedX = x * Math.cos((-this.rotation * Math.PI) / 180) - y * Math.sin((-this.rotation * Math.PI) / 180)
-        const rotatedY = x * Math.sin((-this.rotation * Math.PI) / 180) + y * Math.cos((-this.rotation * Math.PI) / 180)
-        px = rotatedX + this.x
-        py = rotatedY + this.y
-
-        return shapeDefinition.coordinateMode === 'corner'
-          ? px >= this.x && px <= this.x + this.width && py >= this.y && py <= this.y + this.height
-          : px >= this.x - this.width / 2 &&
-              px <= this.x + this.width / 2 &&
-              py >= this.y - this.height / 2 &&
-              py <= this.y + this.height / 2
+        return isPointInRect(
+          px,
+          py,
+          this.x,
+          this.y,
+          this.width,
+          this.height,
+          (this.rotation * Math.PI) / 180,
+          this.coordinateMode
+        )
       },
       /**
        * @param {number} scale
@@ -924,6 +1066,7 @@ class Glass {
   arc(shapeDefinition, options, ...tags) {
     const instance = this
     options = asOptions(options)
+    fillDefaultOptions(this, options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
     shapeDefinition.startAngle = ((((shapeDefinition.startAngle ?? 0) + shapeDefinition.rotation) % 360) + 360) % 360
     shapeDefinition.endAngle = ((((shapeDefinition.endAngle ?? 0) + shapeDefinition.rotation) % 360) + 360) % 360
@@ -984,30 +1127,7 @@ class Glass {
        */
       hasPoint(px, py) {
         if (this.radius === undefined) throw new TypeError('Missing radius')
-
-        // Translate the point by the center of the arc
-        const translatedX = px - this.x
-        const translatedY = py - this.y
-
-        // Check if the point is within the circle's radius
-        if (translatedX ** 2 + translatedY ** 2 > this.radius ** 2) return false // Point is outside the circle's radius
-
-        // Check if it is a full circle
-        if (this.startAngle === this.endAngle % 360) return true
-
-        // Calculate the angle of the point relative to the center of the circle
-        let pointAngle = (Math.atan2(translatedY, translatedX) * 180) / Math.PI // Angle in degrees
-        pointAngle = (pointAngle + 360) % 360 // Normalize to [0, 360) range
-
-        // Normalize the start and end angles to [0, 360) range
-        const startAngle = (this.startAngle + 270) % 360
-        const endAngle = (this.endAngle + 270) % 360
-
-        if (startAngle > endAngle)
-          // Handle the case where the arc spans across the 0-degree line
-          return pointAngle >= startAngle || pointAngle <= endAngle
-        // Normal case where startAngle < endAngle
-        return pointAngle >= startAngle && pointAngle <= endAngle
+        return isPointInArc(px, py, this.x, this.y, this.radius, this.startAngle, this.endAngle)
       },
       /**
        * @param {number} scale
@@ -1064,6 +1184,7 @@ class Glass {
   ellipse(shapeDefinition, options, ...tags) {
     const instance = this
     options = asOptions(options)
+    fillDefaultOptions(this, options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
     shapeDefinition.startAngle = (((shapeDefinition.startAngle ?? 0) % 360) + 360) % 360
     shapeDefinition.endAngle = (((shapeDefinition.endAngle ?? 0) % 360) + 360) % 360
@@ -1144,23 +1265,17 @@ class Glass {
        * @returns {boolean}
        */
       hasPoint(px, py) {
-        px -= this.x
-        py -= this.y
-        const ratio = this.radiusX / this.radiusY
-        const radians = (Math.PI / 180) * this.rotation
-        const cos = Math.cos(radians)
-        const sin = Math.sin(radians)
-        ;[px, py] = [cos * px + sin * py, cos * py - sin * px]
-        py *= ratio
-        const distance = Math.sqrt(px ** 2 + py ** 2)
-        if (distance > this.radiusX) return false
-        if (this.startAngle === this.endAngle % 360) return true
-        const angle = (-((Math.atan2(px, py) / Math.PI) * 180) + 360 + 180) % 360
-        const normalizedStartAngle = this.startAngle % 360
-        const normalizedEndAngle = this.endAngle % 360
-        if (normalizedStartAngle > normalizedEndAngle)
-          return angle >= normalizedStartAngle || angle <= normalizedEndAngle
-        return angle >= normalizedStartAngle && angle <= normalizedEndAngle
+        return isPointInEllipse(
+          px,
+          py,
+          this.x,
+          this.y,
+          this.radiusX,
+          this.radiusY,
+          this.startAngle,
+          this.endAngle,
+          this.rotation
+        )
       },
       /**
        * @param {number} scale
@@ -1220,6 +1335,7 @@ class Glass {
   text(shapeDefinition, options, ...tags) {
     const instance = this
     options = asOptions(options)
+    fillDefaultOptions(this, options)
     options.lineWidth = options.lineWidth ?? 0
     shapeDefinition.text = String(shapeDefinition.text)
     shapeDefinition.baseline = shapeDefinition.baseline ?? 'bottom'
@@ -1326,6 +1442,7 @@ class Glass {
   triangle(shapeDefinition, options, ...tags) {
     const instance = this
     options = asOptions(options)
+    fillDefaultOptions(this, options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
 
     options.lineWidth = options.lineWidth ?? 0
@@ -1501,6 +1618,7 @@ class Glass {
   line(shapeDefinition, options, ...tags) {
     const instance = this
     if (options.lineWidth === undefined) throw new Error('Cannot draw a line of undefined width.')
+    fillDefaultOptions(this, options)
     options.mouseMode = options.mouseMode ?? this.defaultMouseMode
     /** @type {GlassEntryLine} */
     const entry = {
@@ -1510,19 +1628,103 @@ class Glass {
       lineWidth: options.lineWidth,
       mouseMode: options.mouseMode,
       tags,
-      bounds: {
-        minX: Math.min(shapeDefinition.x1, shapeDefinition.x2) - options.lineWidth / 2,
-        minY: Math.min(shapeDefinition.y1, shapeDefinition.y2) - options.lineWidth / 2,
-        maxX: Math.max(shapeDefinition.x1, shapeDefinition.x2) + options.lineWidth / 2,
-        maxY: Math.max(shapeDefinition.y1, shapeDefinition.y2) + options.lineWidth / 2
-      },
+      bounds: (() => {
+        const { x1, y1, x2, y2 } = shapeDefinition
+        const lineWidth = options.lineWidth
+
+        // If the lineCap mode is 'round' then I can just merge the bounding boxes of the circles at the ends.
+
+        if (options.lineCap === 'round') {
+          const cir1Bounds = {
+            minX: x1 - lineWidth / 2,
+            minY: y1 - lineWidth / 2,
+            maxX: x1 + lineWidth / 2,
+            maxY: y1 + lineWidth / 2
+          }
+
+          const cir2Bounds = {
+            minX: x2 - lineWidth / 2,
+            minY: y2 - lineWidth / 2,
+            maxX: x2 + lineWidth / 2,
+            maxY: y2 + lineWidth / 2
+          }
+
+          return {
+            minX: Math.min(cir1Bounds.minX, cir2Bounds.minX),
+            minY: Math.min(cir1Bounds.minY, cir2Bounds.minY),
+            maxX: Math.max(cir1Bounds.maxX, cir2Bounds.maxX),
+            maxY: Math.max(cir1Bounds.maxY, cir2Bounds.maxY)
+          }
+        }
+
+        // Otherwise I have to treat the line as a rectangle, extend the ends based on the lineCap, then rotate it...
+
+        const angle = Math.atan2(y2 - y1, x2 - x1)
+        const length = Math.sqrt(Math.abs(x2 - x1) ** 2 + Math.abs(y2 - y1) ** 2)
+
+        const lineCapSize = options.lineCap === 'butt' ? 0 : options.lineWidth / 2
+
+        const rectCorners = {
+          x1: -lineCapSize,
+          y1: -options.lineWidth / 2,
+          x2: length + lineCapSize,
+          y2: options.lineWidth / 2
+        }
+
+        const rect = {
+          x1: rectCorners.x1,
+          y1: rectCorners.y1,
+          x2: rectCorners.x1,
+          y2: rectCorners.y2,
+          x3: rectCorners.x2,
+          y3: rectCorners.y2,
+          x4: rectCorners.x2,
+          y4: rectCorners.y1
+        }
+
+        const rotatedRect = {
+          x1: Math.cos(angle) * rect.x1 - Math.sin(angle) * rect.y1,
+          y1: Math.sin(angle) * rect.x1 + Math.cos(angle) * rect.y1,
+          x2: Math.cos(angle) * rect.x2 - Math.sin(angle) * rect.y2,
+          y2: Math.sin(angle) * rect.x2 + Math.cos(angle) * rect.y2,
+          x3: Math.cos(angle) * rect.x3 - Math.sin(angle) * rect.y3,
+          y3: Math.sin(angle) * rect.x3 + Math.cos(angle) * rect.y3,
+          x4: Math.cos(angle) * rect.x4 - Math.sin(angle) * rect.y4,
+          y4: Math.sin(angle) * rect.x4 + Math.cos(angle) * rect.y4
+        }
+
+        const shiftedRect = {
+          x1: rotatedRect.x1 + x1,
+          y1: rotatedRect.y1 + y1,
+          x2: rotatedRect.x2 + x1,
+          y2: rotatedRect.y2 + y1,
+          x3: rotatedRect.x3 + x1,
+          y3: rotatedRect.y3 + y1,
+          x4: rotatedRect.x4 + x1,
+          y4: rotatedRect.y4 + y1
+        }
+
+        return {
+          minX: Math.min(shiftedRect.x1, shiftedRect.x2, shiftedRect.x3, shiftedRect.x4),
+          minY: Math.min(shiftedRect.y1, shiftedRect.y2, shiftedRect.y3, shiftedRect.y4),
+          maxX: Math.max(shiftedRect.x1, shiftedRect.x2, shiftedRect.x3, shiftedRect.x4),
+          maxY: Math.max(shiftedRect.y1, shiftedRect.y2, shiftedRect.y3, shiftedRect.y4)
+        }
+      })(),
       /**
        * @param {number} px
        * @param {number} py
        * @returns {boolean}
        */
       hasPoint(px, py) {
-        return false
+        if (this.lineCap === 'round')
+          return distanceToLine(px, py, this.x1, this.y1, this.x2, this.y2) <= this.lineWidth / 2
+        const cx = (this.x1 + this.x2) / 2
+        const cy = (this.y1 + this.y2) / 2
+        const width =
+          distanceBetweenPoints(this.x1, this.y1, cx, cy) * 2 + (this.lineCap === 'square' ? this.lineWidth : 0)
+        const angle = Math.atan2(this.y1 - this.y2, this.x1 - this.x2)
+        return isPointInRect(px, py, cx, cy, width, this.lineWidth, angle, 'center')
       },
       /**
        * @param {number} scale
