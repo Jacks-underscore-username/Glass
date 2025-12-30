@@ -1,4 +1,4 @@
-import Color from '../Color/Color.js'
+import Color from './Color/Color.js'
 
 /**
  * @typedef {string | GlassColorGradient | CanvasGradient} GlassColor
@@ -131,7 +131,6 @@ import Color from '../Color/Color.js'
  * @property {string} [shadowColor] A canvas compatible color string.
  * @property {number} [shadowOffsetX] Defaults to `0`. TODO
  * @property {number} [shadowOffsetY] Defaults to `0`. TODO
- * @property {boolean} [static] TODO, defaults to `false`.
  * @property {number} [layer] The layer used for rendering order and click events, larger numbers are added last, and so are rendered on top and are the first to be clicked.
  *
  *
@@ -366,13 +365,6 @@ class Glass {
   /** @type {String} */
   outsideColor = '#fff'
 
-  staticPaneWidth = 1000
-  staticPaneHeight = 1000
-  /** Where the static pane should go if it is not the same ratio as the viewport.
-   * @type {'top' | 'right' | 'bottom' | 'left' | 'center'}
-   */
-  staticPaneMode = 'center'
-
   /** @type {GlassEntry[]} */
   _renderStack = []
 
@@ -410,7 +402,7 @@ class Glass {
 
   /** @type {{color: Color, lineWidth: number}} */
   showBoundsOptions = {
-    color: new Color('0f0'),
+    color: Color.fromHex('0f0'),
     lineWidth: 2.5
   }
 
@@ -420,11 +412,11 @@ class Glass {
   /** @type {{hitColor: Color, hitCountForMaxColor: number, defaultColor: Color, targetCells: number}} */
   showAreasOptions = {
     /** @type {Color} */
-    hitColor: new Color('0f0'),
+    hitColor: Color.fromHex('0f0'),
     /** @type {number} */
     hitCountForMaxColor: 10,
     /** @type {Color} */
-    defaultColor: new Color('f00'),
+    defaultColor: Color.fromHex('f00'),
     /** @type {number} */
     targetCells: 10_000
   }
@@ -476,6 +468,13 @@ class Glass {
       let minY = Number.POSITIVE_INFINITY
       let maxX = Number.NEGATIVE_INFINITY
       let maxY = Number.NEGATIVE_INFINITY
+      for (const entry of renderStack) {
+        const bounds = entry.bounds
+        minX = Math.min(minX, bounds.minX)
+        minY = Math.min(minY, bounds.minY)
+        maxX = Math.max(maxX, bounds.maxX)
+        maxY = Math.max(maxY, bounds.maxY)
+      }
       if (Number.isNaN(minX + minY + maxX + maxY)) throw new Error('Invalid bounds on renderstack item.')
       if (minX === Number.POSITIVE_INFINITY) minX = minY = maxX = maxY = 0
       this.viewportX = (minX + maxX) / 2

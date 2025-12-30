@@ -34,7 +34,8 @@ const runTest = name =>
           return new Response(Bun.file(path.resolve(__dirname, './index.html')))
         if (url.pathname === '/script.js') return new Response(Bun.file(path.resolve(__dirname, './script.js')))
         if (url.pathname === '/Glass.js') return new Response(Bun.file(path.resolve(__dirname, '../Glass.js')))
-        if (url.pathname === '/Color.js') return new Response(Bun.file(path.resolve(__dirname, '../Color.js')))
+        if (url.pathname === '/Color/Color.js')
+          return new Response(Bun.file(path.resolve(__dirname, '../Color/Color.js')))
         if (url.pathname === '/test.js') return new Response(Bun.file(path.resolve(__dirname, 'tests', `${name}.js`)))
         if (url.pathname === '/result') {
           const result = await req.text()

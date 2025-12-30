@@ -1,3 +1,3 @@
 [ ] Shaders
 [ ] Full canvas manipulation
-[ ] Multiple "windows"
+[ ] Multiple "panes"
