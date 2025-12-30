@@ -13,6 +13,8 @@ import Color from './Color/Color.js'
  *
  * @property {GlassColor} color
  * @property {number} lineWidth
+ * @property {CanvasRenderingContext2D['lineCap']} [lineCap]
+ * @property {CanvasRenderingContext2D['lineJoin']} [lineJoin]
  * @property {number} [shadowBlur]
  * @property {string} [shadowColor]
  * @property {number} [shadowOffsetX]
@@ -85,10 +87,22 @@ import Color from './Color/Color.js'
  * @property {number} x3
  * @property {number} y3
  *
+ *
  * @typedef {Omit<GlassEntryBase, 'x' | 'y'> & GlassEntryBaseMouse & GlassEntryTriangleArgs} GlassEntryTriangle
  *
  *
- * @typedef {GlassEntryRect | GlassEntryArc | GlassEntryEllipse | GlassEntryText | GlassEntryTriangle} GlassEntry
+ * @typedef {object} GlassEntryLineArgs
+ * @property {'line'} type
+ * @property {number} x1
+ * @property {number} y1
+ * @property {number} x2
+ * @property {number} y2
+ *
+ *
+ * @typedef {Omit<GlassEntryBase, 'x' | 'y' | 'rotation'> & GlassEntryBaseMouse & GlassEntryLineArgs} GlassEntryLine
+ *
+ *
+ * @typedef {GlassEntryRect | GlassEntryArc | GlassEntryEllipse | GlassEntryText | GlassEntryTriangle | GlassEntryLine} GlassEntry
  *
  *
  * @typedef {object} GlassColorGradientLinear
@@ -127,6 +141,8 @@ import Color from './Color/Color.js'
  * @typedef {object} GlassDrawCallOptionsBase
  * @property {GlassColor} color
  * @property {number} [lineWidth] When `lineWidth` is `0` the shape is filled instead of outlined, defaults to `0`.
+ * @property {CanvasRenderingContext2D['lineCap']} [lineCap]
+ * @property {CanvasRenderingContext2D['lineJoin']} [lineJoin]
  * @property {number} [shadowBlur] Defaults to `0`.
  * @property {string} [shadowColor] A canvas compatible color string.
  * @property {number} [shadowOffsetX] Defaults to `0`. TODO
@@ -167,11 +183,14 @@ const asOptions = options => {
 const isClickableEntry = entry => entry.mouseMode !== 'ignore' && typeof entry.hasPoint === 'function'
 
 /**
+ * @param {Glass} glass
  * @param {CanvasRenderingContext2D} ctx
  * @param {GlassEntry} entry
  * @param {boolean} [onlyStyle] Defaults to `false`.
  */
-const ctxClose = (ctx, entry, onlyStyle = false) => {
+const ctxClose = (glass, ctx, entry, onlyStyle = false) => {
+  ctx.lineCap = entry.lineCap ?? glass.defaultLineCap
+  ctx.lineJoin = entry.lineJoin ?? glass.defaultLineJoin
   if (entry.shadowBlur) {
     ctx.shadowBlur = entry.shadowBlur
     ctx.shadowColor = entry.shadowColor ?? ''
@@ -277,8 +296,12 @@ const shiftBounds = (x, y, bounds) => {
  * @class
  */
 class Glass {
+  /** @type {Glass} */
+  instance
+
   /** @param {HTMLCanvasElement} canvas */
   constructor(canvas) {
+    this.instance = this
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')
     if (this.ctx === null) throw new Error('Error getting ctx')
@@ -423,6 +446,12 @@ class Glass {
 
   /** @type {'ignore'|'passthrough'|'consume'} ignore lets the click through without effect, `'passthrough'` lets the click through while still triggering click events, `'consume'` triggers click events and does not let the click through. */
   defaultMouseMode = 'consume'
+
+  /** @type {CanvasRenderingContext2D['lineCap']} */
+  defaultLineCap = 'butt'
+
+  /** @type {CanvasRenderingContext2D['lineJoin']} */
+  defaultLineJoin = 'miter'
 
   render = (() => {
     const canvas = this.canvas
@@ -740,6 +769,7 @@ class Glass {
    * @return {GlassEntryRect}
    */
   rect(shapeDefinition, options, ...tags) {
+    const instance = this
     options = asOptions(options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
     shapeDefinition.coordinateMode = shapeDefinition.coordinateMode ?? 'corner'
@@ -872,7 +902,7 @@ class Glass {
         ctx.lineTo(points[2][0], points[2][1])
         ctx.lineTo(points[3][0], points[3][1])
         ctx.lineTo(points[0][0], points[0][1])
-        ctxClose(ctx, this)
+        ctxClose(instance, ctx, this)
       }
     }
     this._renderStack.push(entry)
@@ -892,6 +922,7 @@ class Glass {
    * @return {GlassEntryArc}
    */
   arc(shapeDefinition, options, ...tags) {
+    const instance = this
     options = asOptions(options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
     shapeDefinition.startAngle = ((((shapeDefinition.startAngle ?? 0) + shapeDefinition.rotation) % 360) + 360) % 360
@@ -1010,7 +1041,7 @@ class Glass {
           ((this.startAngle + 270) * Math.PI) / 180,
           ((this.endAngle + 270) * Math.PI) / 180
         )
-        ctxClose(ctx, this)
+        ctxClose(instance, ctx, this)
       }
     }
     this._renderStack.push(entry)
@@ -1031,6 +1062,7 @@ class Glass {
    * @return {GlassEntryEllipse}
    */
   ellipse(shapeDefinition, options, ...tags) {
+    const instance = this
     options = asOptions(options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
     shapeDefinition.startAngle = (((shapeDefinition.startAngle ?? 0) % 360) + 360) % 360
@@ -1163,7 +1195,7 @@ class Glass {
           ((this.startAngle + 270) * Math.PI) / 180,
           ((this.endAngle + 270) * Math.PI) / 180
         )
-        ctxClose(ctx, this)
+        ctxClose(instance, ctx, this)
       }
     }
     this._renderStack.push(obj)
@@ -1186,6 +1218,7 @@ class Glass {
    * @return {GlassEntryText}
    */
   text(shapeDefinition, options, ...tags) {
+    const instance = this
     options = asOptions(options)
     options.lineWidth = options.lineWidth ?? 0
     shapeDefinition.text = String(shapeDefinition.text)
@@ -1266,7 +1299,7 @@ class Glass {
         ctx.textBaseline = this.baseline
         const font = `${this.size}px ${this.font}`
         ctx.font = font
-        ctxClose(ctx, this, true)
+        ctxClose(instance, ctx, this, true)
         if (this.lineWidth) ctx.strokeText(this.text, this.x, this.y, this.maxWidth)
         else ctx.fillText(this.text, this.x, this.y, this.maxWidth)
         if (this.rotation) ctx.restore()
@@ -1291,6 +1324,7 @@ class Glass {
    * @return {GlassEntryTriangle}
    */
   triangle(shapeDefinition, options, ...tags) {
+    const instance = this
     options = asOptions(options)
     shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
 
@@ -1447,7 +1481,82 @@ class Glass {
         ctx.moveTo(points[0].x, points[0].y)
 
         for (let i = 1; i <= points.length; i++) ctx.lineTo(points[i % points.length].x, points[i % points.length].y)
-        ctxClose(ctx, this)
+        ctxClose(instance, ctx, this)
+      }
+    }
+    this._renderStack.push(entry)
+    return entry
+  }
+
+  /**
+   * Just draws a basic line, a linewidth must be passed in options.
+   * @param {object} shapeDefinition
+   * @param {number} shapeDefinition.x1
+   * @param {number} shapeDefinition.y1
+   * @param {number} shapeDefinition.x2
+   * @param {number} shapeDefinition.y2
+   * @param {GlassDrawCallOptions & { lineWidth: number }} options
+   * @param {any} [tags]
+   */
+  line(shapeDefinition, options, ...tags) {
+    const instance = this
+    if (options.lineWidth === undefined) throw new Error('Cannot draw a line of undefined width.')
+    options.mouseMode = options.mouseMode ?? this.defaultMouseMode
+    /** @type {GlassEntryLine} */
+    const entry = {
+      type: 'line',
+      ...shapeDefinition,
+      ...options,
+      lineWidth: options.lineWidth,
+      mouseMode: options.mouseMode,
+      tags,
+      bounds: {
+        minX: Math.min(shapeDefinition.x1, shapeDefinition.x2) - options.lineWidth / 2,
+        minY: Math.min(shapeDefinition.y1, shapeDefinition.y2) - options.lineWidth / 2,
+        maxX: Math.max(shapeDefinition.x1, shapeDefinition.x2) + options.lineWidth / 2,
+        maxY: Math.max(shapeDefinition.y1, shapeDefinition.y2) + options.lineWidth / 2
+      },
+      /**
+       * @param {number} px
+       * @param {number} py
+       * @returns {boolean}
+       */
+      hasPoint(px, py) {
+        return false
+      },
+      /**
+       * @param {number} scale
+       */
+      scale(scale) {
+        this.x1 *= scale
+        this.y1 *= scale
+        this.x2 *= scale
+        this.y2 *= scale
+
+        this.lineWidth *= scale
+        scaleBounds(scale, this.bounds)
+        if (options.shadowBlur) options.shadowBlur *= scale
+      },
+      /**
+       * @param {number} x
+       * @param {number} y
+       */
+      shift(x, y) {
+        this.x1 += x
+        this.y1 += y
+        this.x2 += x
+        this.y2 += y
+
+        shiftBounds(x, y, this.bounds)
+      },
+      /** @param {CanvasRenderingContext2D} ctx */
+      render(ctx) {
+        ctx.beginPath()
+
+        ctx.moveTo(this.x1, this.y1)
+        ctx.lineTo(this.x2, this.y2)
+
+        ctxClose(instance, ctx, this)
       }
     }
     this._renderStack.push(entry)

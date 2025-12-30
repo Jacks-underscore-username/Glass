@@ -1,3 +1,4 @@
+const PNG = require('pngjs').PNG
 const puppeteer = require('puppeteer')
 const bun = require('bun')
 const path = require('node:path')
@@ -46,12 +47,36 @@ const runTest = name =>
           if (!fs.existsSync(path.join(__dirname, 'test_target_results')))
             fs.mkdirSync(path.join(__dirname, 'test_target_results'))
           const isFirstRun = !fs.existsSync(path.join(__dirname, 'test_target_results', filename))
-          const success =
-            isFirstRun ||
-            fs.readFileSync(path.join(__dirname, 'test_target_results', filename)).toString() === binaryData.toString()
+          const target = fs.readFileSync(path.join(__dirname, 'test_target_results', filename))
+          const success = isFirstRun || target.toString() === binaryData.toString()
           if (!success) {
+            if (!fs.existsSync(path.join(__dirname, 'failed_test_compares')))
+              fs.mkdirSync(path.join(__dirname, 'failed_test_compares'))
             if (!fs.existsSync(path.join(__dirname, 'failed_test_results')))
               fs.mkdirSync(path.join(__dirname, 'failed_test_results'))
+            const targetImg = PNG.sync.read(target)
+            const resultImg = PNG.sync.read(binaryData)
+            const { width, height } = targetImg
+            const diff = new PNG({ width, height })
+            for (let i = 0; i < targetImg.data.length; i += 4) {
+              const different =
+                Math.abs(targetImg.data[i + 0] - resultImg.data[i + 0]) ||
+                Math.abs(targetImg.data[i + 1] - resultImg.data[i + 1]) ||
+                Math.abs(targetImg.data[i + 2] - resultImg.data[i + 2]) ||
+                Math.abs(targetImg.data[i + 3] - resultImg.data[i + 3])
+
+              if (different) {
+                diff.data[i + 0] = 255
+                diff.data[i + 1] = diff.data[i + 2] = 0
+              } else
+                diff.data[i + 0] =
+                  diff.data[i + 1] =
+                  diff.data[i + 2] =
+                    (targetImg.data[i + 0] + targetImg.data[i + 1] + targetImg.data[i + 2]) / 3
+
+              diff.data[i + 3] = 255
+            }
+            fs.writeFileSync(path.join(__dirname, 'failed_test_compares', filename), PNG.sync.write(diff))
             fs.writeFileSync(path.join(__dirname, 'failed_test_results', filename), binaryData)
           }
           if (isFirstRun) fs.writeFileSync(path.join(__dirname, 'test_target_results', filename), binaryData)
@@ -72,7 +97,6 @@ const runTest = name =>
      * @returns {string}
      */
     const formatMessage = event => {
-      // throw console.log(event)
       const type = `[Console ${event.type()[0].toUpperCase()}${event.type().slice(1)}]`
       const trace = event
         .stackTrace()
@@ -103,6 +127,8 @@ const runTests = async () => {
   process.stdout.write('\x1b[2J\x1b[H')
   shouldRunTests = false
   isRunningTests = true
+  if (fs.existsSync(path.join(__dirname, 'failed_test_compares')))
+    fs.rmSync(path.join(__dirname, 'failed_test_compares'), { recursive: true, force: true })
   if (fs.existsSync(path.join(__dirname, 'failed_test_results')))
     fs.rmSync(path.join(__dirname, 'failed_test_results'), { recursive: true, force: true })
   const tests = fs.readdirSync(path.join(__dirname, 'tests')).map(file => file.split('.')[0])
