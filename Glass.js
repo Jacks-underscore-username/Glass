@@ -161,6 +161,13 @@ import Color from "./Color/Color.js";
  *
  *
  * @typedef {GlassDrawCallOptionsBase & GlassDrawCallOptionsMouseProps} GlassDrawCallOptions
+ *
+ *
+ * @typedef {Glass['rect'] | Glass['arc'] | Glass['triangle'] | Glass['line'] | Glass['ellipse'] | Glass['text'] } SpriteAbleFunc
+ */
+/**
+ * @template {SpriteAbleFunc} F
+ * @typedef {{ func: F, shapeDefinition: Parameters<F>[0], options: Exclude<Parameters<F>[1], GlassColor>, remove: () => void }} Sprite<F>
  */
 
 /**
@@ -548,11 +555,6 @@ export class Glass {
   };
 
   /**
-   * @type {Set<Sprite>}
-   */
-  _sprites = new Set();
-
-  /**
    * Adds a callback to be run when the event of type is called, callbacks are run in the order they were added, use `off(type, listener)` to remove.
    * The types are as follows:
    * - `beforeRender`: Is the first thing to run in the render function, it is suggested you call most of draw calls here.
@@ -595,12 +597,26 @@ export class Glass {
    * @param {{x:number,y:number}} event
    */
   _clickHandler(event) {
-    const renderStack = [...this._lastRender.renderStack].sort(() => -1);
+    const stack = [];
+    const toStack = [...this._lastRender.renderStack].sort(() => -1);
+    while (toStack.length) {
+      const layer = toStack.reduce(
+        (prev, entry) => Math.max(prev, entry.layer ?? 0),
+        -Infinity,
+      );
+      console.log(layer, toStack);
+      for (let i = 0; i < toStack.length; i++) {
+        const entry = toStack[i];
+        if ((entry.layer ?? 0) === layer) {
+          stack.push(entry);
+          toStack.splice(i, 1);
+          i--;
+        }
+      }
+    }
     const x = event.x;
     const y = event.y;
-    for (const entry of renderStack.filter((entry) =>
-      isClickableEntry(entry),
-    )) {
+    for (const entry of stack.filter((entry) => isClickableEntry(entry))) {
       if (
         x >= entry.bounds.minX &&
         x <= entry.bounds.maxX &&
@@ -649,6 +665,9 @@ export class Glass {
   defaultLineJoin = "miter";
 
   render = (() => {
+    for (const sprite of this._sprites)
+      sprite.func(sprite.shapeDefinition, sprite.options);
+
     const canvas = this.canvas;
     /** @type {CanvasRenderingContext2D} */
     const ctx = this.ctx;
@@ -909,15 +928,32 @@ export class Glass {
 
     if (this.renderMode === "auto")
       requestAnimationFrame(this.render.bind(this));
-
-    this._renderSprites();
   }).bind(this);
 
-  _renderSprites = (() => {
-    for (const sprite of this._sprites.values()) {
-      sprite._render();
-    }
-  }).bind(this);
+  /**
+   * @type {{ func: (shapeDefinition: any, options: GlassDrawCallOptions) => any, shapeDefinition: any, options: GlassDrawCallOptions, remove: () => void }[]}
+   */
+  _sprites = [];
+
+  /**
+   * @template {SpriteAbleFunc} F
+   * @param {F} func
+   * @param {Parameters<F>[0]} shapeDefinition
+   * @param {Exclude<Parameters<F>[1], GlassColor>} options
+   * @returns {Sprite<F>}
+   */
+  createSprite(func, shapeDefinition, options) {
+    const sprite = {
+      func: /** @type {F} */ (func.bind(this)),
+      shapeDefinition,
+      options,
+      // @ts-expect-error
+      remove: () => void this._sprites.splice(this._sprites.indexOf(sprite), 1),
+    };
+    // @ts-expect-error
+    this._sprites.push(sprite);
+    return sprite;
+  }
 
   /**
    * @param {number} x0
@@ -1975,48 +2011,3 @@ export class Glass {
     return entry;
   }
 }
-
-/**
- * @typedef {object} Sprite
- * @prop {() => void} _render
- * @prop {(other: Sprite) => Sprite} join
- * @prop {() => Sprite} copy
- * @prop {() => void} delete
- * @prop {number} x
- * @prop {number} y
- * @prop {number} rotation
- * @prop {number} scale
- * @prop {Glass} glass
- *
- * @typedef {object} SpriteOptions
- * @prop {number} x
- * @prop {number} y
- * @prop {number} rotation
- * @prop {number} scale
- * @prop {Glass} glass
- */
-
-/**
- * @param {Parameters<Glass['rect']>[0]} shapeDefinition
- * @param {Parameters<Glass['rect']>[1]} options
- * @param {SpriteOptions} spriteOptions
- * @returns {Sprite}
- */
-export const createSpriteRect = (shapeDefinition, options, spriteOptions) => {
-  /** @type {Sprite} */
-  const sprite = {
-    _render: () => spriteOptions.glass.rect(shapeDefinition, options),
-    join: () => {
-      throw new Error("Not implemented yet");
-    },
-    copy: () => {
-      throw new Error("Not implemented yet");
-    },
-    delete: () => {
-      throw new Error("Not implemented yet");
-    },
-    ...spriteOptions,
-  };
-  spriteOptions.glass._sprites.add(sprite);
-  return sprite;
-};

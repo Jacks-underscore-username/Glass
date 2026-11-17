@@ -1,7 +1,7 @@
 // The website here is just for dev reasons, and is not needed for Glass at all
 
 import Color from "./Color/Color.js";
-import { Glass, createSpriteRect } from "./Glass.js";
+import { Glass } from "./Glass.js";
 
 const canvas = /** @type {HTMLCanvasElement} */ (
   document.getElementById("canvas")
@@ -9,51 +9,46 @@ const canvas = /** @type {HTMLCanvasElement} */ (
 
 const glass = new Glass(canvas);
 
-// glass.showBounds = true
-// glass.showAreas = true
-// glass.showAreasOptions.hitCountForMaxColor = 2
-// glass.showAreasOptions.targetCells = 80000
-createSpriteRect(
+//glass.showBounds = true;
+//glass.showAreas = true;
+//glass.showAreasOptions.hitCountForMaxColor = 2;
+
+const rectSprite = glass.createSprite(
+  glass.rect,
+  { x: 0, y: 0, width: 100, height: 100, coordinateMode: "center" },
   {
-    x: 0,
-    y: 0,
-    width: 200,
-    height: 200,
-    coordinateMode: "center",
-  },
-  "#999",
-  {
-    glass,
-    x: 0,
-    y: 0,
-    rotation: 0,
-    scale: 1,
+    onClick: () => {
+      rectSprite.shapeDefinition.rotation = 0;
+    },
+    color: "#0f0",
+    layer: -1,
   },
 );
-const b = createSpriteRect(
+
+const arcSprite = glass.createSprite(
+  glass.arc,
+  { x: 0, y: 0, radius: 10 },
   {
-    x: 0,
-    y: 0,
-    width: 100,
-    height: 100,
-    coordinateMode: "center",
-  },
-  {
-    color: "#0f0",
-    onClick() {
-      console.log(this);
+    color: "#fff",
+    onClick: () => {
+      arcSprite.shapeDefinition.radius = 10;
     },
-  },
-  {
-    glass,
-    x: 0,
-    y: 0,
-    rotation: 0,
-    scale: 1,
+    layer: 1,
   },
 );
 
 glass.on("beforeRender", () => {
-  b.rotation += 1;
-  console.log(b);
+  if (rectSprite.shapeDefinition.rotation === undefined)
+    rectSprite.shapeDefinition.rotation = 0;
+  else rectSprite.shapeDefinition.rotation++;
+  if (rectSprite.shapeDefinition.rotation >= 90) {
+    console.log(rectSprite.options);
+    if (typeof rectSprite.options.color !== "string")
+      return rectSprite.remove();
+    const color = Color.fromHex(rectSprite.options.color);
+    color.hue += 50;
+    rectSprite.options.color = color.hex;
+    rectSprite.shapeDefinition.rotation = 0;
+    arcSprite.shapeDefinition.radius += 5;
+  }
 });
