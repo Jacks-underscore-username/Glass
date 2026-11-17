@@ -1,26 +1,36 @@
-import Glass from '../../Glass.js'
+import { Glass } from "../../Glass.js";
 
-export default /** @param {HTMLCanvasElement} canvas; @returns {Promise<void>} */ canvas =>
-  new Promise(resolve => {
-    const glass = new Glass(canvas)
+export default /** @param {HTMLCanvasElement} canvas; @returns {Promise<void>} */ (
+  canvas,
+) =>
+  new Promise((resolve) => {
+    const glass = new Glass(canvas);
 
-    glass.showBounds = true
+    glass.showBounds = true;
 
-    glass.on('beforeRender', () => {
-      let x = -50
-      for (const base of /** @type {('bottom' | 'middle' | 'top')[]} */ (['bottom', 'middle', 'top'])) {
-        x += 50
-        let y = -50
-        for (const align of /** @type {('left' | 'center' | 'right')[]} */ (['left', 'center', 'right'])) {
-          y += 50
+    glass.on("beforeRender", () => {
+      let x = -50;
+      for (const base of /** @type {('bottom' | 'middle' | 'top')[]} */ ([
+        "bottom",
+        "middle",
+        "top",
+      ])) {
+        x += 50;
+        let y = -50;
+        for (const align of /** @type {('left' | 'center' | 'right')[]} */ ([
+          "left",
+          "center",
+          "right",
+        ])) {
+          y += 50;
           glass.arc(
             {
               x,
               y,
-              radius: 2
+              radius: 2,
             },
-            '#f00'
-          )
+            "#f00",
+          );
           glass.text(
             {
               x,
@@ -28,13 +38,13 @@ export default /** @param {HTMLCanvasElement} canvas; @returns {Promise<void>} *
               text: `${base} ${align}`,
               size: 5,
               alignment: align,
-              baseline: base
+              baseline: base,
             },
-            '#fff'
-          )
+            "#fff",
+          );
         }
       }
-    })
+    });
 
-    glass.on('afterRender', () => resolve())
-  })
+    glass.on("afterRender", () => resolve());
+  });

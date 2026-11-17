@@ -1,6 +1,8 @@
-import Color from './Color/Color.js'
+import Color from "./Color/Color.js";
 
 /**
+ * @typedef {{minX:number,minY:number,maxX:number,maxY:number}} Bounds
+ *
  * @typedef {string | GlassColorGradient | CanvasGradient} GlassColor
  *
  * @typedef {object} GlassEntryBase
@@ -9,7 +11,7 @@ import Color from './Color/Color.js'
  * @property {(x:number,y:number)=>any} shift
  * @property {(ctx:CanvasRenderingContext2D)=>any} render
  *
- * @property {{minX:number,minY:number,maxX:number,maxY:number}} bounds
+ * @property {Bounds} bounds
  *
  * @property {GlassColor} color
  * @property {number} lineWidth
@@ -166,14 +168,14 @@ import Color from './Color/Color.js'
  * @param {T} options
  * @returns {Exclude<T, GlassColor>}
  */
-const asOptions = options => {
+const asOptions = (options) => {
   // @ts-expect-error
-  if (typeof options === 'string') return { color: options }
+  if (typeof options === "string") return { color: options };
   // @ts-expect-error
-  if (Object.keys(options).includes('colorStops')) return { color: options }
+  if (Object.keys(options).includes("colorStops")) return { color: options };
   // @ts-expect-error
-  return options
-}
+  return options;
+};
 
 /**
  * @template {GlassDrawCallOptions | GlassDrawCallOptionsNoMouse} T
@@ -182,17 +184,18 @@ const asOptions = options => {
  * @returns {T}
  */
 const fillDefaultOptions = (glass, options) => {
-  options.lineCap = options.lineCap ?? glass.defaultLineCap
-  options.lineJoin = options.lineJoin ?? glass.defaultLineJoin
-  return options
-}
+  options.lineCap = options.lineCap ?? glass.defaultLineCap;
+  options.lineJoin = options.lineJoin ?? glass.defaultLineJoin;
+  return options;
+};
 
 /**
  * Type guard to check if an entry has the required mouse interaction methods.
  * @param {GlassEntry} entry
  * @returns {entry is GlassEntry & { hasPoint: (x: number, y: number) => boolean, onClick: () => any }}
  */
-const isClickableEntry = entry => entry.mouseMode !== 'ignore' && typeof entry.hasPoint === 'function'
+const isClickableEntry = (entry) =>
+  entry.mouseMode !== "ignore" && typeof entry.hasPoint === "function";
 
 /**
  * @param {Glass} glass
@@ -201,21 +204,21 @@ const isClickableEntry = entry => entry.mouseMode !== 'ignore' && typeof entry.h
  * @param {boolean} [onlyStyle] Defaults to `false`.
  */
 const ctxClose = (glass, ctx, entry, onlyStyle = false) => {
-  ctx.lineCap = entry.lineCap ?? glass.defaultLineCap
-  ctx.lineJoin = entry.lineJoin ?? glass.defaultLineJoin
+  ctx.lineCap = entry.lineCap ?? glass.defaultLineCap;
+  ctx.lineJoin = entry.lineJoin ?? glass.defaultLineJoin;
   if (entry.shadowBlur) {
-    ctx.shadowBlur = entry.shadowBlur
-    ctx.shadowColor = entry.shadowColor ?? ''
-  } else ctx.shadowBlur = 0
+    ctx.shadowBlur = entry.shadowBlur;
+    ctx.shadowColor = entry.shadowColor ?? "";
+  } else ctx.shadowBlur = 0;
   if (entry.lineWidth) {
-    ctx.strokeStyle = entry.color
-    ctx.lineWidth = entry.lineWidth
-    if (!onlyStyle) ctx.stroke()
+    ctx.strokeStyle = entry.color;
+    ctx.lineWidth = entry.lineWidth;
+    if (!onlyStyle) ctx.stroke();
   } else {
-    ctx.fillStyle = entry.color
-    if (!onlyStyle) ctx.fill()
+    ctx.fillStyle = entry.color;
+    if (!onlyStyle) ctx.fill();
   }
-}
+};
 
 /**
  * @param {number} cx
@@ -229,68 +232,71 @@ const ctxClose = (glass, ctx, entry, onlyStyle = false) => {
  * @returns {{minX:number,minY:number,maxX:number,maxY:number}}
  */
 const rotateBounds = (cx, cy, bounds, rotation) => {
-  let minX = Number.POSITIVE_INFINITY
-  let minY = Number.POSITIVE_INFINITY
-  let maxX = Number.NEGATIVE_INFINITY
-  let maxY = Number.NEGATIVE_INFINITY
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
 
-  const rads = (rotation * Math.PI) / 180
+  const rads = (rotation * Math.PI) / 180;
 
   for (const point of [
     [bounds.minX, bounds.minY],
     [bounds.maxX, bounds.minY],
     [bounds.maxX, bounds.maxY],
-    [bounds.minX, bounds.maxY]
+    [bounds.minX, bounds.maxY],
   ]) {
-    const x = point[0] - cx
-    const y = point[1] - cy
-    const rotatedX = x * Math.cos(rads) - y * Math.sin(rads)
-    const rotatedY = x * Math.sin(rads) + y * Math.cos(rads)
-    point[0] = rotatedX + cx
-    point[1] = rotatedY + cy
-    minX = Math.min(minX, point[0])
-    minY = Math.min(minY, point[1])
-    maxX = Math.max(maxX, point[0])
-    maxY = Math.max(maxY, point[1])
+    const x = point[0] - cx;
+    const y = point[1] - cy;
+    const rotatedX = x * Math.cos(rads) - y * Math.sin(rads);
+    const rotatedY = x * Math.sin(rads) + y * Math.cos(rads);
+    point[0] = rotatedX + cx;
+    point[1] = rotatedY + cy;
+    minX = Math.min(minX, point[0]);
+    minY = Math.min(minY, point[1]);
+    maxX = Math.max(maxX, point[0]);
+    maxY = Math.max(maxY, point[1]);
   }
 
-  return { minX, minY, maxX, maxY }
-}
+  return { minX, minY, maxX, maxY };
+};
 
 /**
  * @template {object | any[]} T
  * @param {T} obj
  * @returns {T}
  */
-const copyObject = obj => {
+const copyObject = (obj) => {
   if (Array.isArray(obj)) {
-    const newArr = []
+    const newArr = [];
     for (const value of obj) {
-      newArr.push(typeof value === 'object' && value !== null ? copyObject(value) : value)
+      newArr.push(
+        typeof value === "object" && value !== null ? copyObject(value) : value,
+      );
     }
-    return /** @type {T} */ (newArr)
+    return /** @type {T} */ (newArr);
   }
-  if (obj !== null && typeof obj === 'object') {
+  if (obj !== null && typeof obj === "object") {
     /** @type {{ [key: string]: any }} */
-    const newObj = {}
+    const newObj = {};
     for (const [key, value] of Object.entries(obj)) {
-      newObj[key] = typeof value === 'object' && value !== null ? copyObject(value) : value
+      newObj[key] =
+        typeof value === "object" && value !== null ? copyObject(value) : value;
     }
-    return /** @type {T} */ (newObj)
+    return /** @type {T} */ (newObj);
   }
-  return obj
-}
+  return obj;
+};
 
 /**
  * @param {number} scale
  * @param {{minX:number,minY:number,maxX:number,maxY:number}} bounds
  */
 const scaleBounds = (scale, bounds) => {
-  bounds.minX *= scale
-  bounds.minY *= scale
-  bounds.maxX *= scale
-  bounds.maxY *= scale
-}
+  bounds.minX *= scale;
+  bounds.minY *= scale;
+  bounds.maxX *= scale;
+  bounds.maxY *= scale;
+};
 
 /**
  * @param {number} x
@@ -298,11 +304,11 @@ const scaleBounds = (scale, bounds) => {
  * @param {{minX:number,minY:number,maxX:number,maxY:number}} bounds
  */
 const shiftBounds = (x, y, bounds) => {
-  bounds.minX += x
-  bounds.minY += y
-  bounds.maxX += x
-  bounds.maxY += y
-}
+  bounds.minX += x;
+  bounds.minY += y;
+  bounds.maxX += x;
+  bounds.maxY += y;
+};
 
 /**
  * @param {number} px
@@ -314,22 +320,32 @@ const shiftBounds = (x, y, bounds) => {
  * @param {number} [endAngle]
  * @returns {boolean}
  */
-const isPointInArc = (px, py, ax, ay, radius, startAngle = 0, endAngle = 360) => {
-  const translatedX = px - ax
-  const translatedY = py - ay
+const isPointInArc = (
+  px,
+  py,
+  ax,
+  ay,
+  radius,
+  startAngle = 0,
+  endAngle = 360,
+) => {
+  const translatedX = px - ax;
+  const translatedY = py - ay;
 
-  if (translatedX ** 2 + translatedY ** 2 > radius ** 2) return false
+  if (translatedX ** 2 + translatedY ** 2 > radius ** 2) return false;
 
-  if (startAngle === endAngle % 360) return true
+  if (startAngle === endAngle % 360) return true;
 
-  const pointAngle = ((Math.atan2(translatedY, translatedX) * 180) / Math.PI + 360) % 360
+  const pointAngle =
+    ((Math.atan2(translatedY, translatedX) * 180) / Math.PI + 360) % 360;
 
-  startAngle = (startAngle + 270) % 360
-  endAngle = (endAngle + 270) % 360
+  startAngle = (startAngle + 270) % 360;
+  endAngle = (endAngle + 270) % 360;
 
-  if (startAngle > endAngle) return pointAngle >= startAngle || pointAngle <= endAngle
-  return pointAngle >= startAngle && pointAngle <= endAngle
-}
+  if (startAngle > endAngle)
+    return pointAngle >= startAngle || pointAngle <= endAngle;
+  return pointAngle >= startAngle && pointAngle <= endAngle;
+};
 
 /**
  * @param {number} px
@@ -343,24 +359,35 @@ const isPointInArc = (px, py, ax, ay, radius, startAngle = 0, endAngle = 360) =>
  * @param {number} rotation
  * @returns {boolean}
  */
-const isPointInEllipse = (px, py, ax, ay, radiusX, radiusY, startAngle, endAngle, rotation) => {
-  px -= ax
-  py -= ay
-  const ratio = radiusX / radiusY
-  const radians = (Math.PI / 180) * rotation
-  const cos = Math.cos(radians)
-  const sin = Math.sin(radians)
-  ;[px, py] = [cos * px + sin * py, cos * py - sin * px]
-  py *= ratio
-  const distance = Math.sqrt(px ** 2 + py ** 2)
-  if (distance > radiusX) return false
-  if (startAngle === endAngle % 360) return true
-  const angle = (-((Math.atan2(px, py) / Math.PI) * 180) + 360 + 180) % 360
-  const normalizedStartAngle = startAngle % 360
-  const normalizedEndAngle = endAngle % 360
-  if (normalizedStartAngle > normalizedEndAngle) return angle >= normalizedStartAngle || angle <= normalizedEndAngle
-  return angle >= normalizedStartAngle && angle <= normalizedEndAngle
-}
+const isPointInEllipse = (
+  px,
+  py,
+  ax,
+  ay,
+  radiusX,
+  radiusY,
+  startAngle,
+  endAngle,
+  rotation,
+) => {
+  px -= ax;
+  py -= ay;
+  const ratio = radiusX / radiusY;
+  const radians = (Math.PI / 180) * rotation;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  [px, py] = [cos * px + sin * py, cos * py - sin * px];
+  py *= ratio;
+  const distance = Math.sqrt(px ** 2 + py ** 2);
+  if (distance > radiusX) return false;
+  if (startAngle === endAngle % 360) return true;
+  const angle = (-((Math.atan2(px, py) / Math.PI) * 180) + 360 + 180) % 360;
+  const normalizedStartAngle = startAngle % 360;
+  const normalizedEndAngle = endAngle % 360;
+  if (normalizedStartAngle > normalizedEndAngle)
+    return angle >= normalizedStartAngle || angle <= normalizedEndAngle;
+  return angle >= normalizedStartAngle && angle <= normalizedEndAngle;
+};
 
 /**
  * @param {number} px
@@ -371,13 +398,13 @@ const isPointInEllipse = (px, py, ax, ay, radiusX, radiusY, startAngle, endAngle
  * @returns {{ x: number, y: number }}
  */
 const rotatePoint = (px, py, cx, cy, radians) => {
-  const x = px - cx
-  const y = py - cy
+  const x = px - cx;
+  const y = py - cy;
   return {
     x: Math.cos(radians) * x - Math.sin(radians) * y + cx,
-    y: Math.sin(radians) * x + Math.cos(radians) * y + cy
-  }
-}
+    y: Math.sin(radians) * x + Math.cos(radians) * y + cy,
+  };
+};
 
 /**
  * @param {number} x1
@@ -386,7 +413,8 @@ const rotatePoint = (px, py, cx, cy, radians) => {
  * @param {number} y2
  * @returns {number}
  */
-const distanceBetweenPoints = (x1, y1, x2, y2) => Math.sqrt(Math.abs(x1 - x2) ** 2 + Math.abs(y1 - y2) ** 2)
+const distanceBetweenPoints = (x1, y1, x2, y2) =>
+  Math.sqrt(Math.abs(x1 - x2) ** 2 + Math.abs(y1 - y2) ** 2);
 
 /**
  * @param {number} px
@@ -398,19 +426,20 @@ const distanceBetweenPoints = (x1, y1, x2, y2) => Math.sqrt(Math.abs(x1 - x2) **
  * @returns {number}
  */
 const distanceToLine = (px, py, lx1, ly1, lx2, ly2) => {
-  const lineLengthSq = (lx2 - lx1) ** 2 + (ly2 - ly1) ** 2
+  const lineLengthSq = (lx2 - lx1) ** 2 + (ly2 - ly1) ** 2;
 
-  const t = ((px - lx1) * (lx2 - lx1) + (py - ly1) * (ly2 - ly1)) / lineLengthSq
+  const t =
+    ((px - lx1) * (lx2 - lx1) + (py - ly1) * (ly2 - ly1)) / lineLengthSq;
 
-  if (t < 0) return distanceBetweenPoints(px, py, lx1, ly1)
+  if (t < 0) return distanceBetweenPoints(px, py, lx1, ly1);
 
-  if (t > 1) return distanceBetweenPoints(px, py, lx2, ly2)
+  if (t > 1) return distanceBetweenPoints(px, py, lx2, ly2);
 
-  const closestX = lx1 + t * (lx2 - lx1)
-  const closestY = ly1 + t * (ly2 - ly1)
+  const closestX = lx1 + t * (lx2 - lx1);
+  const closestY = ly1 + t * (ly2 - ly1);
 
-  return distanceBetweenPoints(px, py, closestX, closestY)
-}
+  return distanceBetweenPoints(px, py, closestX, closestY);
+};
 
 /**
  * @param {number} px
@@ -423,72 +452,84 @@ const distanceToLine = (px, py, lx1, ly1, lx2, ly2) => {
  * @param {'corner' | 'center'} coordinateMode
  * @returns {boolean}
  */
-const isPointInRect = (px, py, rx, ry, width, height, radians, coordinateMode) => {
-  const x = px - rx
-  const y = py - ry
-  const rotatedX = x * Math.cos(-radians) - y * Math.sin(-radians)
-  const rotatedY = x * Math.sin(-radians) + y * Math.cos(-radians)
-  px = rotatedX + x
-  py = rotatedY + y
+const isPointInRect = (
+  px,
+  py,
+  rx,
+  ry,
+  width,
+  height,
+  radians,
+  coordinateMode,
+) => {
+  const x = px - rx;
+  const y = py - ry;
+  const rotatedX = x * Math.cos(-radians) - y * Math.sin(-radians);
+  const rotatedY = x * Math.sin(-radians) + y * Math.cos(-radians);
+  px = rotatedX + x;
+  py = rotatedY + y;
 
-  return coordinateMode === 'corner'
+  return coordinateMode === "corner"
     ? px >= x && px <= x + width && py >= y && py <= y + height
-    : px >= x - width / 2 && px <= x + width / 2 && py >= y - height / 2 && py <= y + height / 2
-}
+    : px >= x - width / 2 &&
+        px <= x + width / 2 &&
+        py >= y - height / 2 &&
+        py <= y + height / 2;
+};
 
 /**
  * @class
  */
-class Glass {
+export class Glass {
   /** @type {Glass} */
-  instance
+  instance;
 
   /** @param {HTMLCanvasElement} canvas */
   constructor(canvas) {
-    this.instance = this
-    this.canvas = canvas
-    this.ctx = canvas.getContext('2d')
-    if (this.ctx === null) throw new Error('Error getting ctx')
-    requestAnimationFrame(this.render)
-    canvas.addEventListener('click', event => this._clickHandler(event))
+    this.instance = this;
+    this.canvas = canvas;
+    this.ctx = canvas.getContext("2d");
+    if (this.ctx === null) throw new Error("Error getting ctx");
+    requestAnimationFrame(this.render);
+    canvas.addEventListener("click", (event) => this._clickHandler(event));
   }
 
   /** The mode used the canvas's width and height.
-   * - `'fit'`: The canvas's size will adjust to fit it's parent element.
+   * - `'fit'`: The canvas's size will adjust to fit its parent element.
    * - `'manual'`: The canvas's size will not adjust, but manual adjustments to the size will still be used.
    * @type {'fit' | 'manual'}
    */
-  canvasMode = 'fit'
+  canvasMode = "fit";
 
   /** The mode used for the viewport's scale and position.
    * - `'auto'`: The viewport will scale to fit all the content drawn.
    * - `'manual'`: The viewport's scale and position can be controlled manually using the `viewportWidth`, `viewportHeight`, `viewportX` and `viewportY` properties.
    * @type {'auto' | 'manual'}
    */
-  viewportMode = 'auto'
+  viewportMode = "auto";
 
   /** @type {number} */
-  viewportWidth = 100
+  viewportWidth = 100;
 
   /** @type {number} */
-  viewportHeight = 100
+  viewportHeight = 100;
 
   /** The center of the viewport.
    * @type {number}
    */
-  viewportX = 0
+  viewportX = 0;
 
   /** The center of the viewport.
    * @type {number}
    */
-  viewportY = 0
+  viewportY = 0;
 
   /**
    * - `'auto'`: Renders every animation frame, based off the `window.requestAnimationFrame()` function.
    * - `'manual'`: Only renders when `render()` is called.
    * @type {'auto' | 'manual'}
    */
-  renderMode = 'auto'
+  renderMode = "auto";
 
   /**
    * @typedef {'beforeRender' | 'beforeShift' | 'beforeScale' | 'afterScale' | 'afterRender' | 'resize'} GlassEvent
@@ -503,8 +544,13 @@ class Glass {
     beforeScale: [],
     afterScale: [],
     afterRender: [],
-    resize: []
-  }
+    resize: [],
+  };
+
+  /**
+   * @type {Set<Sprite>}
+   */
+  _sprites = new Set();
 
   /**
    * Adds a callback to be run when the event of type is called, callbacks are run in the order they were added, use `off(type, listener)` to remove.
@@ -516,7 +562,7 @@ class Glass {
    * @param {GlassEvent} type
    * @param {(event:object|undefined)=>any} listener
    */
-  on = (type, listener) => this._listeners[type].push(listener)
+  on = (type, listener) => this._listeners[type].push(listener);
 
   /**
    * Removes the last instance of the callback from the list of callbacks to be run when the event of type is called, if no callback matches nothing happens.
@@ -525,31 +571,36 @@ class Glass {
    */
   off = (type, listener) =>
     this._listeners[type].includes(listener) &&
-    this._listeners[type].splice(this._listeners[type].lastIndexOf(listener), 1)
+    this._listeners[type].splice(
+      this._listeners[type].lastIndexOf(listener),
+      1,
+    );
 
   /** @type {String} */
-  backgroundColor = '#000'
+  backgroundColor = "#000";
   /** @type {String} */
-  outsideColor = '#fff'
+  outsideColor = "#fff";
 
   /** @type {GlassEntry[]} */
-  _renderStack = []
+  _renderStack = [];
 
-  _lastSize = { width: 0, height: 0 }
+  _lastSize = { width: 0, height: 0 };
 
   /**
    * @type {{renderStack:GlassEntry[],canvasWidth:number,canvasHeight:number}}
    */
-  _lastRender = { renderStack: [], canvasWidth: 0, canvasHeight: 0 }
+  _lastRender = { renderStack: [], canvasWidth: 0, canvasHeight: 0 };
 
   /**
    * @param {{x:number,y:number}} event
    */
   _clickHandler(event) {
-    const renderStack = [...this._lastRender.renderStack].sort(() => -1)
-    const x = event.x
-    const y = event.y
-    for (const entry of renderStack.filter(entry => isClickableEntry(entry))) {
+    const renderStack = [...this._lastRender.renderStack].sort(() => -1);
+    const x = event.x;
+    const y = event.y;
+    for (const entry of renderStack.filter((entry) =>
+      isClickableEntry(entry),
+    )) {
       if (
         x >= entry.bounds.minX &&
         x <= entry.bounds.maxX &&
@@ -558,73 +609,76 @@ class Glass {
         entry.hasPoint(x, y) &&
         entry.onClick
       ) {
-        entry.onClick()
-        if (entry.mouseMode !== 'passthrough') break
+        entry.onClick();
+        if (entry.mouseMode !== "passthrough") break;
       }
     }
   }
 
   /** @type {boolean} Shows the bounding box of everything rendered with a blue outline. */
-  showBounds = false
+  showBounds = false;
 
   /** @type {{color: Color, lineWidth: number}} */
   showBoundsOptions = {
-    color: Color.fromHex('0f0'),
-    lineWidth: 2.5
-  }
+    color: Color.fromHex("0f0"),
+    lineWidth: 2.5,
+  };
 
   /** @type {boolean} Creates an overlay of a grid where each cell is colored based on how many objects can be clicked at that location. */
-  showAreas = false
+  showAreas = false;
 
   /** @type {{hitColor: Color, hitCountForMaxColor: number, defaultColor: Color, targetCells: number}} */
   showAreasOptions = {
     /** @type {Color} */
-    hitColor: Color.fromHex('0f0'),
+    hitColor: Color.fromHex("0f0"),
     /** @type {number} */
     hitCountForMaxColor: 10,
     /** @type {Color} */
-    defaultColor: Color.fromHex('f00'),
+    defaultColor: Color.fromHex("f00"),
     /** @type {number} */
-    targetCells: 10_000
-  }
+    targetCells: 10_000,
+  };
 
   /** @type {'ignore'|'passthrough'|'consume'} ignore lets the click through without effect, `'passthrough'` lets the click through while still triggering click events, `'consume'` triggers click events and does not let the click through. */
-  defaultMouseMode = 'consume'
+  defaultMouseMode = "consume";
 
   /** @type {CanvasRenderingContext2D['lineCap']} */
-  defaultLineCap = 'butt'
+  defaultLineCap = "butt";
 
   /** @type {CanvasRenderingContext2D['lineJoin']} */
-  defaultLineJoin = 'miter'
+  defaultLineJoin = "miter";
 
   render = (() => {
-    const canvas = this.canvas
+    const canvas = this.canvas;
     /** @type {CanvasRenderingContext2D} */
-    const ctx = this.ctx
+    const ctx = this.ctx;
 
-    if (this.canvasMode === 'fit') {
-      const parentElement = canvas.parentElement
-      if (parentElement === null) throw new Error('Cannot get canvas parent')
-      const parentSize = parentElement.getBoundingClientRect()
-      canvas.style.width = `${parentSize.width}px`
-      canvas.style.height = `${parentSize.height}px`
-      canvas.width = parentSize.width
-      canvas.height = parentSize.height
+    if (this.canvasMode === "fit") {
+      const parentElement = canvas.parentElement;
+      if (parentElement === null) throw new Error("Cannot get canvas parent");
+      const parentSize = parentElement.getBoundingClientRect();
+      canvas.style.width = `${parentSize.width}px`;
+      canvas.style.height = `${parentSize.height}px`;
+      canvas.width = parentSize.width;
+      canvas.height = parentSize.height;
     }
 
-    const renderStack = this._renderStack
+    const renderStack = this._renderStack;
 
-    if (canvas.width !== this._lastSize.width || canvas.height !== this._lastSize.height) {
+    if (
+      canvas.width !== this._lastSize.width ||
+      canvas.height !== this._lastSize.height
+    ) {
       for (const listener of this._listeners.resize)
         listener({
           canvas,
           ctx,
           renderStack,
           canvasWidth: canvas.width,
-          canvasHeight: canvas.height
-        })
-      this._lastSize.width = canvas.width
-      this._lastSize.height = canvas.height
+          canvasHeight: canvas.height,
+        });
+      this._lastSize.width = canvas.width;
+      this._lastSize.height = canvas.height;
     }
 
     for (const listener of this._listeners.beforeRender)
@@ -633,192 +687,237 @@ class Glass {
         ctx,
         renderStack,
         canvasWidth: canvas.width,
-        canvasHeight: canvas.height
-      })
+        canvasHeight: canvas.height,
+      });
 
-    if (this.viewportMode === 'auto') {
-      let minX = Number.POSITIVE_INFINITY
-      let minY = Number.POSITIVE_INFINITY
-      let maxX = Number.NEGATIVE_INFINITY
-      let maxY = Number.NEGATIVE_INFINITY
+    // If the renderStack is empty trying to render will crash…
+    // TODO: Find a better fix
+    if (this._renderStack.length) {
+      if (this.viewportMode === "auto") {
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
+        for (const entry of renderStack) {
+          const bounds = entry.bounds;
+          minX = Math.min(minX, bounds.minX);
+          minY = Math.min(minY, bounds.minY);
+          maxX = Math.max(maxX, bounds.maxX);
+          maxY = Math.max(maxY, bounds.maxY);
+        }
+        if (Number.isNaN(minX + minY + maxX + maxY))
+          throw new Error("Invalid bounds on renderstack item.");
+        if (minX === Number.POSITIVE_INFINITY) minX = minY = maxX = maxY = 0;
+        this.viewportX = (minX + maxX) / 2;
+        this.viewportY = (minY + maxY) / 2;
+        this.viewportWidth = maxX - minX;
+        this.viewportHeight = maxY - minY;
+      }
+      renderStack.sort((a, b) => (a.layer ?? 0) - (b.layer ?? 0));
+      const scale = Math.min(
+        canvas.width / this.viewportWidth,
+        canvas.height / this.viewportHeight,
+      );
+      const shiftX = this.viewportWidth / 2 - this.viewportX;
+      const shiftY = this.viewportHeight / 2 - this.viewportY;
+      for (const listener of this._listeners.beforeShift)
+        listener({
+          canvas,
+          ctx,
+          renderStack,
+          scale,
+          shiftX,
+          shiftY,
+          canvasWidth: canvas.width,
+          canvasHeight: canvas.height,
+        });
+      for (const entry of renderStack) entry.shift(shiftX, shiftY);
+      for (const listener of this._listeners.beforeScale)
+        listener({
+          canvas,
+          ctx,
+          renderStack,
+          scale,
+          shiftX,
+          shiftY,
+          canvasWidth: canvas.width,
+          canvasHeight: canvas.height,
+        });
+      for (const entry of renderStack) entry.scale(scale);
+      for (const listener of this._listeners.afterScale)
+        listener({
+          canvas,
+          ctx,
+          renderStack,
+          scale,
+          shiftX,
+          shiftY,
+          canvasWidth: canvas.width,
+          canvasHeight: canvas.height,
+        });
+
+      const offsetX = (canvas.width - this.viewportWidth * scale) / 2;
+      const offsetY = (canvas.height - this.viewportHeight * scale) / 2;
+
+      ctx.fillStyle = this.backgroundColor;
+      ctx.fillRect(
+        offsetX,
+        offsetY,
+        this.viewportWidth * scale,
+        this.viewportHeight * scale,
+      );
       for (const entry of renderStack) {
-        const bounds = entry.bounds
-        minX = Math.min(minX, bounds.minX)
-        minY = Math.min(minY, bounds.minY)
-        maxX = Math.max(maxX, bounds.maxX)
-        maxY = Math.max(maxY, bounds.maxY)
+        if (
+          typeof entry.color === "object" &&
+          entry.color !== null &&
+          "type" in entry.color
+        ) {
+          const color = entry.color;
+          let grad;
+          if (color.type === "linear")
+            grad = ctx.createLinearGradient(
+              (color.x0 + shiftX) * scale + offsetX,
+              (color.y0 + shiftY) * scale + offsetY,
+              (color.x1 + shiftX) * scale + offsetX,
+              (color.y1 + shiftY) * scale + offsetY,
+            );
+          else if (color.type === "radial")
+            grad = ctx.createRadialGradient(
+              (color.x0 + shiftX) * scale + offsetX,
+              (color.y0 + shiftY) * scale + offsetY,
+              color.r0 * scale,
+              (color.x1 + shiftX) * scale + offsetX,
+              (color.y1 + shiftY) * scale + offsetY,
+              color.r1 * scale,
+            );
+          else if (color.type === "conic")
+            grad = ctx.createConicGradient(
+              color.startAngle,
+              (color.x + shiftX) * scale + offsetX,
+              (color.y + shiftY) * scale + offsetY,
+            );
+          else throw new TypeError("Invalid gradient type used for color");
+
+          for (const stop of color.colorStops)
+            grad.addColorStop(stop.t, stop.color);
+
+          entry.color = grad;
+        }
+        entry.shift(offsetX, offsetY);
+        entry.render(ctx);
       }
-      if (Number.isNaN(minX + minY + maxX + maxY)) throw new Error('Invalid bounds on renderstack item.')
-      if (minX === Number.POSITIVE_INFINITY) minX = minY = maxX = maxY = 0
-      this.viewportX = (minX + maxX) / 2
-      this.viewportY = (minY + maxY) / 2
-      this.viewportWidth = maxX - minX
-      this.viewportHeight = maxY - minY
-    }
-    renderStack.sort((a, b) => (a.layer ?? 0) - (b.layer ?? 0))
-    const scale = Math.min(canvas.width / this.viewportWidth, canvas.height / this.viewportHeight)
-    const shiftX = this.viewportWidth / 2 - this.viewportX
-    const shiftY = this.viewportHeight / 2 - this.viewportY
-    for (const listener of this._listeners.beforeShift)
-      listener({
-        canvas,
-        ctx,
-        renderStack,
-        scale,
-        shiftX,
-        shiftY,
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = this.outsideColor;
+      ctx.fillRect(0, 0, offsetX, canvas.height);
+      ctx.fillRect(0, 0, canvas.width, offsetY);
+      ctx.fillRect(canvas.width - offsetX, 0, offsetX, canvas.height);
+      ctx.fillRect(0, canvas.height - offsetY, canvas.width, offsetY);
+      for (const listener of this._listeners.afterRender)
+        listener({
+          canvas,
+          ctx,
+          renderStack,
+          scale,
+          shiftX,
+          shiftY,
+          canvasWidth: canvas.width,
+          canvasHeight: canvas.height,
+        });
+
+      this._lastRender = copyObject({
+        viewportX: this.viewportX,
+        viewportY: this.viewportY,
+        viewportWidth: this.viewportWidth,
+        viewportHeight: this.viewportHeight,
         canvasWidth: canvas.width,
-        canvasHeight: canvas.height
-      })
-    for (const entry of renderStack) entry.shift(shiftX, shiftY)
-    for (const listener of this._listeners.beforeScale)
-      listener({
-        canvas,
-        ctx,
+        canvasHeight: canvas.height,
+        offsetX,
+        offsetY,
         renderStack,
-        scale,
-        shiftX,
-        shiftY,
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height
-      })
-    for (const entry of renderStack) entry.scale(scale)
-    for (const listener of this._listeners.afterScale)
-      listener({
-        canvas,
-        ctx,
-        renderStack,
-        scale,
-        shiftX,
-        shiftY,
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height
-      })
+      });
 
-    const offsetX = (canvas.width - this.viewportWidth * scale) / 2
-    const offsetY = (canvas.height - this.viewportHeight * scale) / 2
-
-    ctx.fillStyle = this.backgroundColor
-    ctx.fillRect(offsetX, offsetY, this.viewportWidth * scale, this.viewportHeight * scale)
-    for (const entry of renderStack) {
-      if (typeof entry.color === 'object' && entry.color !== null && 'type' in entry.color) {
-        const color = entry.color
-        let grad
-        if (color.type === 'linear')
-          grad = ctx.createLinearGradient(
-            (color.x0 + shiftX) * scale + offsetX,
-            (color.y0 + shiftY) * scale + offsetY,
-            (color.x1 + shiftX) * scale + offsetX,
-            (color.y1 + shiftY) * scale + offsetY
-          )
-        else if (color.type === 'radial')
-          grad = ctx.createRadialGradient(
-            (color.x0 + shiftX) * scale + offsetX,
-            (color.y0 + shiftY) * scale + offsetY,
-            color.r0 * scale,
-            (color.x1 + shiftX) * scale + offsetX,
-            (color.y1 + shiftY) * scale + offsetY,
-            color.r1 * scale
-          )
-        else if (color.type === 'conic')
-          grad = ctx.createConicGradient(
-            color.startAngle,
-            (color.x + shiftX) * scale + offsetX,
-            (color.y + shiftY) * scale + offsetY
-          )
-        else throw new TypeError('Invalid gradient type used for color')
-
-        for (const stop of color.colorStops) grad.addColorStop(stop.t, stop.color)
-
-        entry.color = grad
-      }
-      entry.shift(offsetX, offsetY)
-      entry.render(ctx)
-    }
-    ctx.shadowBlur = 0
-    ctx.fillStyle = this.outsideColor
-    ctx.fillRect(0, 0, offsetX, canvas.height)
-    ctx.fillRect(0, 0, canvas.width, offsetY)
-    ctx.fillRect(canvas.width - offsetX, 0, offsetX, canvas.height)
-    ctx.fillRect(0, canvas.height - offsetY, canvas.width, offsetY)
-    for (const listener of this._listeners.afterRender)
-      listener({
-        canvas,
-        ctx,
-        renderStack,
-        scale,
-        shiftX,
-        shiftY,
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height
-      })
-
-    if (this.renderMode === 'auto') requestAnimationFrame(this.render.bind(this))
-    this._lastRender = copyObject({
-      viewportX: this.viewportX,
-      viewportY: this.viewportY,
-      viewportWidth: this.viewportWidth,
-      viewportHeight: this.viewportHeight,
-      canvasWidth: canvas.width,
-      canvasHeight: canvas.height,
-      offsetX,
-      offsetY,
-      renderStack
-    })
-
-    if (this.showAreas) {
-      const cellSize = Math.max(
-        1,
-        Math.floor(Math.sqrt((canvas.width * canvas.height) / this.showAreasOptions.targetCells))
-      )
-      const cells = new Array(Math.ceil(canvas.width / cellSize))
-        .fill(0)
-        .map(() => new Array(Math.ceil(canvas.height / cellSize)).fill(0))
-      for (let x = 0; x < canvas.width; x += cellSize)
-        for (let y = 0; y < canvas.height; y += cellSize) {
-          const lastRender = this._lastRender
-          x = (x * lastRender.canvasWidth) / this.canvas.width
-          y = (y * lastRender.canvasHeight) / this.canvas.height
-          for (const entry of renderStack.filter(entry => isClickableEntry(entry))) {
-            if (
-              x >= entry.bounds.minX &&
-              x <= entry.bounds.maxX &&
-              y >= entry.bounds.minY &&
-              y <= entry.bounds.maxY &&
-              entry.hasPoint(x, y)
-            ) {
-              cells[x / cellSize][y / cellSize]++
+      if (this.showAreas) {
+        const cellSize = Math.max(
+          1,
+          Math.floor(
+            Math.sqrt(
+              (canvas.width * canvas.height) /
+                this.showAreasOptions.targetCells,
+            ),
+          ),
+        );
+        const cells = new Array(Math.ceil(canvas.width / cellSize))
+          .fill(0)
+          .map(() => new Array(Math.ceil(canvas.height / cellSize)).fill(0));
+        for (let x = 0; x < canvas.width; x += cellSize)
+          for (let y = 0; y < canvas.height; y += cellSize) {
+            const lastRender = this._lastRender;
+            x = (x * lastRender.canvasWidth) / this.canvas.width;
+            y = (y * lastRender.canvasHeight) / this.canvas.height;
+            for (const entry of renderStack.filter((entry) =>
+              isClickableEntry(entry),
+            )) {
+              if (
+                x >= entry.bounds.minX &&
+                x <= entry.bounds.maxX &&
+                y >= entry.bounds.minY &&
+                y <= entry.bounds.maxY &&
+                entry.hasPoint(x, y)
+              ) {
+                cells[x / cellSize][y / cellSize]++;
+              }
             }
           }
-        }
-      for (let x = 0; x < cells.length; x++)
-        for (let y = 0; y < cells[0].length; y++) {
-          ctx.fillStyle = cells[x][y] ? `rgb(0,255,0,${cells[x][y] / 1})` : '#f003'
-          ctx.fillStyle = this.showAreasOptions.defaultColor.lerp(
-            this.showAreasOptions.hitColor,
-            Math.min(cells[x][y] / this.showAreasOptions.hitCountForMaxColor, 1)
-          ).hex
-          ctx.fillRect(x * cellSize - cellSize / 2, y * cellSize - cellSize / 2, cellSize, cellSize)
-        }
-    }
-
-    if (this.showBounds) {
-      ctx.strokeStyle = this.showBoundsOptions.color.hex
-      ctx.lineWidth = this.showBoundsOptions.lineWidth
-      for (const entry of renderStack) {
-        ctx.beginPath()
-        ctx.rect(
-          entry.bounds.minX,
-          entry.bounds.minY,
-          entry.bounds.maxX - entry.bounds.minX,
-          entry.bounds.maxY - entry.bounds.minY
-        )
-        ctx.stroke()
+        for (let x = 0; x < cells.length; x++)
+          for (let y = 0; y < cells[0].length; y++) {
+            ctx.fillStyle = cells[x][y]
+              ? `rgb(0,255,0,${cells[x][y] / 1})`
+              : "#f003";
+            ctx.fillStyle = this.showAreasOptions.defaultColor.lerp(
+              this.showAreasOptions.hitColor,
+              Math.min(
+                cells[x][y] / this.showAreasOptions.hitCountForMaxColor,
+                1,
+              ),
+            ).hex;
+            ctx.fillRect(
+              x * cellSize - cellSize / 2,
+              y * cellSize - cellSize / 2,
+              cellSize,
+              cellSize,
+            );
+          }
       }
+
+      if (this.showBounds) {
+        ctx.strokeStyle = this.showBoundsOptions.color.hex;
+        ctx.lineWidth = this.showBoundsOptions.lineWidth;
+        for (const entry of renderStack) {
+          ctx.beginPath();
+          ctx.rect(
+            entry.bounds.minX,
+            entry.bounds.minY,
+            entry.bounds.maxX - entry.bounds.minX,
+            entry.bounds.maxY - entry.bounds.minY,
+          );
+          ctx.stroke();
+        }
+      }
+
+      this._renderStack.splice(0);
     }
 
-    this._renderStack.splice(0)
-  }).bind(this)
+    if (this.renderMode === "auto")
+      requestAnimationFrame(this.render.bind(this));
+
+    this._renderSprites();
+  }).bind(this);
+
+  _renderSprites = (() => {
+    for (const sprite of this._sprites.values()) {
+      sprite._render();
+    }
+  }).bind(this);
 
   /**
    * @param {number} x0
@@ -828,7 +927,7 @@ class Glass {
    * @returns {GlassColorGradient}
    */
   createLinearGradient = (x0, y0, x1, y1) => ({
-    type: 'linear',
+    type: "linear",
     x0,
     y0,
     x1,
@@ -840,11 +939,11 @@ class Glass {
      * @returns {GlassColorGradientBase}
      */
     addColorStop(t, color) {
-      this.colorStops.push({ t, color })
-      this.colorStops.sort((a, b) => a.t - b.t)
-      return this
-    }
-  })
+      this.colorStops.push({ t, color });
+      this.colorStops.sort((a, b) => a.t - b.t);
+      return this;
+    },
+  });
 
   /**
    * @param {number} x0
@@ -856,7 +955,7 @@ class Glass {
    * @returns {GlassColorGradient}
    */
   createRadialGradient = (x0, y0, r0, x1, y1, r1) => ({
-    type: 'radial',
+    type: "radial",
     x0,
     y0,
     r0,
@@ -870,11 +969,11 @@ class Glass {
      * @returns {GlassColorGradientBase}
      */
     addColorStop(t, color) {
-      this.colorStops.push({ t, color })
-      this.colorStops.sort((a, b) => a.t - b.t)
-      return this
-    }
-  })
+      this.colorStops.push({ t, color });
+      this.colorStops.sort((a, b) => a.t - b.t);
+      return this;
+    },
+  });
 
   /**
    * @param {number} startAngle
@@ -883,7 +982,7 @@ class Glass {
    * @returns {GlassColorGradient}
    */
   createConicGradient = (startAngle, x, y) => ({
-    type: 'conic',
+    type: "conic",
     startAngle,
     x,
     y,
@@ -894,11 +993,11 @@ class Glass {
      * @returns {GlassColorGradientBase}
      */
     addColorStop(t, color) {
-      this.colorStops.push({ t, color })
-      this.colorStops.sort((a, b) => a.t - b.t)
-      return this
-    }
-  })
+      this.colorStops.push({ t, color });
+      this.colorStops.sort((a, b) => a.t - b.t);
+      return this;
+    },
+  });
 
   /**
    * @param {object} shapeDefinition
@@ -913,17 +1012,18 @@ class Glass {
    * @return {GlassEntryRect}
    */
   rect(shapeDefinition, options, ...tags) {
-    const instance = this
-    options = asOptions(options)
-    fillDefaultOptions(this, options)
-    shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
-    shapeDefinition.coordinateMode = shapeDefinition.coordinateMode ?? 'corner'
-    options.lineWidth = options.lineWidth ?? 0
-    options.mouseMode = options.mouseMode ?? this.defaultMouseMode
+    const instance = this;
+    options = asOptions(options);
+    fillDefaultOptions(this, options);
+    shapeDefinition.rotation =
+      (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360;
+    shapeDefinition.coordinateMode = shapeDefinition.coordinateMode ?? "corner";
+    options.lineWidth = options.lineWidth ?? 0;
+    options.mouseMode = options.mouseMode ?? this.defaultMouseMode;
 
     /** @type {GlassEntryRect} */
     const entry = {
-      type: 'rect',
+      type: "rect",
       ...shapeDefinition,
       rotation: shapeDefinition.rotation,
       coordinateMode: shapeDefinition.coordinateMode,
@@ -932,47 +1032,62 @@ class Glass {
       mouseMode: options.mouseMode,
       tags,
       bounds: (() => {
-        let minX = Number.POSITIVE_INFINITY
-        let minY = Number.POSITIVE_INFINITY
-        let maxX = Number.NEGATIVE_INFINITY
-        let maxY = Number.NEGATIVE_INFINITY
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
         const points =
-          shapeDefinition.coordinateMode === 'corner'
+          shapeDefinition.coordinateMode === "corner"
             ? [
                 [shapeDefinition.x, shapeDefinition.y],
                 [shapeDefinition.x + shapeDefinition.width, shapeDefinition.y],
-                [shapeDefinition.x + shapeDefinition.width, shapeDefinition.y + shapeDefinition.height],
-                [shapeDefinition.x, shapeDefinition.y + shapeDefinition.height]
+                [
+                  shapeDefinition.x + shapeDefinition.width,
+                  shapeDefinition.y + shapeDefinition.height,
+                ],
+                [shapeDefinition.x, shapeDefinition.y + shapeDefinition.height],
               ]
             : [
-                [shapeDefinition.x - shapeDefinition.width / 2, shapeDefinition.y - shapeDefinition.height / 2],
-                [shapeDefinition.x + shapeDefinition.width / 2, shapeDefinition.y - shapeDefinition.height / 2],
-                [shapeDefinition.x + shapeDefinition.width / 2, shapeDefinition.y + shapeDefinition.height / 2],
-                [shapeDefinition.x - shapeDefinition.width / 2, shapeDefinition.y + shapeDefinition.height / 2]
-              ]
+                [
+                  shapeDefinition.x - shapeDefinition.width / 2,
+                  shapeDefinition.y - shapeDefinition.height / 2,
+                ],
+                [
+                  shapeDefinition.x + shapeDefinition.width / 2,
+                  shapeDefinition.y - shapeDefinition.height / 2,
+                ],
+                [
+                  shapeDefinition.x + shapeDefinition.width / 2,
+                  shapeDefinition.y + shapeDefinition.height / 2,
+                ],
+                [
+                  shapeDefinition.x - shapeDefinition.width / 2,
+                  shapeDefinition.y + shapeDefinition.height / 2,
+                ],
+              ];
 
         for (const point of points) {
-          const x = point[0] - shapeDefinition.x
-          const y = point[1] - shapeDefinition.y
+          const x = point[0] - shapeDefinition.x;
+          const y = point[1] - shapeDefinition.y;
           const rotatedX =
             x * Math.cos((shapeDefinition.rotation * Math.PI) / 180) -
-            y * Math.sin((shapeDefinition.rotation * Math.PI) / 180)
+            y * Math.sin((shapeDefinition.rotation * Math.PI) / 180);
           const rotatedY =
             x * Math.sin((shapeDefinition.rotation * Math.PI) / 180) +
-            y * Math.cos((shapeDefinition.rotation * Math.PI) / 180)
-          point[0] = rotatedX + shapeDefinition.x
-          point[1] = rotatedY + shapeDefinition.y
-          minX = Math.min(minX, point[0])
-          minY = Math.min(minY, point[1])
-          maxX = Math.max(maxX, point[0])
-          maxY = Math.max(maxY, point[1])
+            y * Math.cos((shapeDefinition.rotation * Math.PI) / 180);
+          point[0] = rotatedX + shapeDefinition.x;
+          point[1] = rotatedY + shapeDefinition.y;
+          minX = Math.min(minX, point[0]);
+          minY = Math.min(minY, point[1]);
+          maxX = Math.max(maxX, point[0]);
+          maxY = Math.max(maxY, point[1]);
         }
         return {
           minX: minX - options.lineWidth / 2,
           minY: minY - options.lineWidth / 2,
           maxX: maxX + options.lineWidth / 2,
-          maxY: maxY + options.lineWidth / 2
-        }
+          maxY: maxY + options.lineWidth / 2,
+        };
       })(),
       /**
        * @param {number} px
@@ -988,67 +1103,71 @@ class Glass {
           this.width,
           this.height,
           (this.rotation * Math.PI) / 180,
-          this.coordinateMode
-        )
+          this.coordinateMode,
+        );
       },
       /**
        * @param {number} scale
        */
       scale(scale) {
-        this.x *= scale
-        this.y *= scale
-        this.width *= scale
-        this.height *= scale
-        this.lineWidth *= scale
-        scaleBounds(scale, this.bounds)
-        if (options.shadowBlur) options.shadowBlur *= scale
+        this.x *= scale;
+        this.y *= scale;
+        this.width *= scale;
+        this.height *= scale;
+        this.lineWidth *= scale;
+        scaleBounds(scale, this.bounds);
+        if (options.shadowBlur) options.shadowBlur *= scale;
       },
       /**
        * @param {number} x
        * @param {number} y
        */
       shift(x, y) {
-        this.x += x
-        this.y += y
-        shiftBounds(x, y, this.bounds)
+        this.x += x;
+        this.y += y;
+        shiftBounds(x, y, this.bounds);
       },
       /** @param {CanvasRenderingContext2D} ctx */
       render(ctx) {
-        ctx.beginPath()
+        ctx.beginPath();
         const points =
-          this.coordinateMode === 'corner'
+          this.coordinateMode === "corner"
             ? [
                 [this.x, this.y],
                 [this.x + this.width, this.y],
                 [this.x + this.width, this.y + this.height],
-                [this.x, this.y + this.height]
+                [this.x, this.y + this.height],
               ]
             : [
                 [this.x - this.width / 2, this.y - this.height / 2],
                 [this.x + this.width / 2, this.y - this.height / 2],
                 [this.x + this.width / 2, this.y + this.height / 2],
-                [this.x - this.width / 2, this.y + this.height / 2]
-              ]
+                [this.x - this.width / 2, this.y + this.height / 2],
+              ];
 
         for (const point of points) {
-          const x = point[0] - this.x
-          const y = point[1] - this.y
-          const rotatedX = x * Math.cos((this.rotation * Math.PI) / 180) - y * Math.sin((this.rotation * Math.PI) / 180)
-          const rotatedY = x * Math.sin((this.rotation * Math.PI) / 180) + y * Math.cos((this.rotation * Math.PI) / 180)
-          point[0] = rotatedX + this.x
-          point[1] = rotatedY + this.y
+          const x = point[0] - this.x;
+          const y = point[1] - this.y;
+          const rotatedX =
+            x * Math.cos((this.rotation * Math.PI) / 180) -
+            y * Math.sin((this.rotation * Math.PI) / 180);
+          const rotatedY =
+            x * Math.sin((this.rotation * Math.PI) / 180) +
+            y * Math.cos((this.rotation * Math.PI) / 180);
+          point[0] = rotatedX + this.x;
+          point[1] = rotatedY + this.y;
         }
 
-        ctx.moveTo(points[0][0], points[0][1])
-        ctx.lineTo(points[1][0], points[1][1])
-        ctx.lineTo(points[2][0], points[2][1])
-        ctx.lineTo(points[3][0], points[3][1])
-        ctx.lineTo(points[0][0], points[0][1])
-        ctxClose(instance, ctx, this)
-      }
-    }
-    this._renderStack.push(entry)
-    return entry
+        ctx.moveTo(points[0][0], points[0][1]);
+        ctx.lineTo(points[1][0], points[1][1]);
+        ctx.lineTo(points[2][0], points[2][1]);
+        ctx.lineTo(points[3][0], points[3][1]);
+        ctx.lineTo(points[0][0], points[0][1]);
+        ctxClose(instance, ctx, this);
+      },
+    };
+    this._renderStack.push(entry);
+    return entry;
   }
 
   /**
@@ -1064,22 +1183,29 @@ class Glass {
    * @return {GlassEntryArc}
    */
   arc(shapeDefinition, options, ...tags) {
-    const instance = this
-    options = asOptions(options)
-    fillDefaultOptions(this, options)
-    shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
-    shapeDefinition.startAngle = ((((shapeDefinition.startAngle ?? 0) + shapeDefinition.rotation) % 360) + 360) % 360
-    shapeDefinition.endAngle = ((((shapeDefinition.endAngle ?? 0) + shapeDefinition.rotation) % 360) + 360) % 360
-    shapeDefinition.rotation = 0
+    const instance = this;
+    options = asOptions(options);
+    fillDefaultOptions(this, options);
+    shapeDefinition.rotation =
+      (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360;
+    shapeDefinition.startAngle =
+      ((((shapeDefinition.startAngle ?? 0) + shapeDefinition.rotation) % 360) +
+        360) %
+      360;
+    shapeDefinition.endAngle =
+      ((((shapeDefinition.endAngle ?? 0) + shapeDefinition.rotation) % 360) +
+        360) %
+      360;
+    shapeDefinition.rotation = 0;
     if (shapeDefinition.startAngle === shapeDefinition.endAngle) {
-      shapeDefinition.startAngle = 0
-      shapeDefinition.endAngle = 360
+      shapeDefinition.startAngle = 0;
+      shapeDefinition.endAngle = 360;
     }
-    options.mouseMode = options.mouseMode ?? this.defaultMouseMode
-    options.lineWidth = options.lineWidth ?? 0
+    options.mouseMode = options.mouseMode ?? this.defaultMouseMode;
+    options.lineWidth = options.lineWidth ?? 0;
     /** @type {GlassEntryArc} */
     const entry = {
-      type: 'arc',
+      type: "arc",
       ...shapeDefinition,
       rotation: shapeDefinition.rotation,
       startAngle: shapeDefinition.startAngle,
@@ -1089,36 +1215,53 @@ class Glass {
       mouseMode: options.mouseMode,
       tags,
       bounds: (() => {
-        let minX = Number.POSITIVE_INFINITY
-        let minY = Number.POSITIVE_INFINITY
-        let maxX = Number.NEGATIVE_INFINITY
-        let maxY = Number.NEGATIVE_INFINITY
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
 
-        for (const angle of [0, 90, 180, 270, shapeDefinition.startAngle, shapeDefinition.endAngle].filter(
-          (value, index, arr) => arr.indexOf(value) === index
-        )) {
+        for (const angle of [
+          0,
+          90,
+          180,
+          270,
+          shapeDefinition.startAngle,
+          shapeDefinition.endAngle,
+        ].filter((value, index, arr) => arr.indexOf(value) === index)) {
           if (shapeDefinition.startAngle > shapeDefinition.endAngle) {
-            if (angle < shapeDefinition.startAngle && angle > shapeDefinition.endAngle) continue
-          } else if (angle < shapeDefinition.startAngle || angle > shapeDefinition.endAngle) continue
-          const px = Math.sin((angle * Math.PI) / 180) * shapeDefinition.radius + shapeDefinition.x
-          const py = -Math.cos((angle * Math.PI) / 180) * shapeDefinition.radius + shapeDefinition.y
-          minX = Math.min(minX, px)
-          minY = Math.min(minY, py)
-          maxX = Math.max(maxX, px)
-          maxY = Math.max(maxY, py)
+            if (
+              angle < shapeDefinition.startAngle &&
+              angle > shapeDefinition.endAngle
+            )
+              continue;
+          } else if (
+            angle < shapeDefinition.startAngle ||
+            angle > shapeDefinition.endAngle
+          )
+            continue;
+          const px =
+            Math.sin((angle * Math.PI) / 180) * shapeDefinition.radius +
+            shapeDefinition.x;
+          const py =
+            -Math.cos((angle * Math.PI) / 180) * shapeDefinition.radius +
+            shapeDefinition.y;
+          minX = Math.min(minX, px);
+          minY = Math.min(minY, py);
+          maxX = Math.max(maxX, px);
+          maxY = Math.max(maxY, py);
         }
 
-        minX -= options.lineWidth / 2
-        minY -= options.lineWidth / 2
-        maxX += options.lineWidth / 2
-        maxY += options.lineWidth / 2
+        minX -= options.lineWidth / 2;
+        minY -= options.lineWidth / 2;
+        maxX += options.lineWidth / 2;
+        maxY += options.lineWidth / 2;
 
         return {
           minX,
           minY,
           maxX,
-          maxY
-        }
+          maxY,
+        };
       })(),
       /**
        * @param {number} px
@@ -1126,46 +1269,54 @@ class Glass {
        * @returns {boolean}
        */
       hasPoint(px, py) {
-        if (this.radius === undefined) throw new TypeError('Missing radius')
-        return isPointInArc(px, py, this.x, this.y, this.radius, this.startAngle, this.endAngle)
+        if (this.radius === undefined) throw new TypeError("Missing radius");
+        return isPointInArc(
+          px,
+          py,
+          this.x,
+          this.y,
+          this.radius,
+          this.startAngle,
+          this.endAngle,
+        );
       },
       /**
        * @param {number} scale
        */
       scale(scale) {
-        if (this.radius === undefined) throw new TypeError('Missing radius')
+        if (this.radius === undefined) throw new TypeError("Missing radius");
 
-        this.x *= scale
-        this.y *= scale
-        this.radius *= scale
-        this.lineWidth *= scale
-        scaleBounds(scale, this.bounds)
-        if (this.shadowBlur) this.shadowBlur *= scale
+        this.x *= scale;
+        this.y *= scale;
+        this.radius *= scale;
+        this.lineWidth *= scale;
+        scaleBounds(scale, this.bounds);
+        if (this.shadowBlur) this.shadowBlur *= scale;
       },
       /**
        * @param {number} x
        * @param {number} y
        */
       shift(x, y) {
-        this.x += x
-        this.y += y
-        shiftBounds(x, y, this.bounds)
+        this.x += x;
+        this.y += y;
+        shiftBounds(x, y, this.bounds);
       },
       /** @param {CanvasRenderingContext2D} ctx */
       render(ctx) {
-        ctx.beginPath()
+        ctx.beginPath();
         ctx.arc(
           this.x,
           this.y,
           this.radius,
           ((this.startAngle + 270) * Math.PI) / 180,
-          ((this.endAngle + 270) * Math.PI) / 180
-        )
-        ctxClose(instance, ctx, this)
-      }
-    }
-    this._renderStack.push(entry)
-    return entry
+          ((this.endAngle + 270) * Math.PI) / 180,
+        );
+        ctxClose(instance, ctx, this);
+      },
+    };
+    this._renderStack.push(entry);
+    return entry;
   }
 
   /**
@@ -1182,22 +1333,25 @@ class Glass {
    * @return {GlassEntryEllipse}
    */
   ellipse(shapeDefinition, options, ...tags) {
-    const instance = this
-    options = asOptions(options)
-    fillDefaultOptions(this, options)
-    shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
-    shapeDefinition.startAngle = (((shapeDefinition.startAngle ?? 0) % 360) + 360) % 360
-    shapeDefinition.endAngle = (((shapeDefinition.endAngle ?? 0) % 360) + 360) % 360
+    const instance = this;
+    options = asOptions(options);
+    fillDefaultOptions(this, options);
+    shapeDefinition.rotation =
+      (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360;
+    shapeDefinition.startAngle =
+      (((shapeDefinition.startAngle ?? 0) % 360) + 360) % 360;
+    shapeDefinition.endAngle =
+      (((shapeDefinition.endAngle ?? 0) % 360) + 360) % 360;
     if (shapeDefinition.startAngle === shapeDefinition.endAngle) {
-      shapeDefinition.startAngle = 0
-      shapeDefinition.endAngle = 360
+      shapeDefinition.startAngle = 0;
+      shapeDefinition.endAngle = 360;
     }
-    options.lineWidth = options.lineWidth ?? 0
-    options.mouseMode = options.mouseMode ?? this.defaultMouseMode
+    options.lineWidth = options.lineWidth ?? 0;
+    options.mouseMode = options.mouseMode ?? this.defaultMouseMode;
 
     /** @type {GlassEntryEllipse} */
     const obj = {
-      type: 'ellipse',
+      type: "ellipse",
       ...shapeDefinition,
       rotation: shapeDefinition.rotation,
       startAngle: shapeDefinition.startAngle,
@@ -1207,57 +1361,67 @@ class Glass {
       mouseMode: options.mouseMode,
       tags,
       bounds: (() => {
-        let minX = Number.POSITIVE_INFINITY
-        let minY = Number.POSITIVE_INFINITY
-        let maxX = Number.NEGATIVE_INFINITY
-        let maxY = Number.NEGATIVE_INFINITY
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
 
-        const radians = (shapeDefinition.rotation * Math.PI) / 180
-        const shiftedStartAngle = (shapeDefinition.startAngle + 270) % 360
-        const shiftedEndAngle = (shapeDefinition.endAngle + 270) % 360
-        const angles = [shiftedStartAngle, shiftedEndAngle]
+        const radians = (shapeDefinition.rotation * Math.PI) / 180;
+        const shiftedStartAngle = (shapeDefinition.startAngle + 270) % 360;
+        const shiftedEndAngle = (shapeDefinition.endAngle + 270) % 360;
+        const angles = [shiftedStartAngle, shiftedEndAngle];
 
-        const x1 = Math.cos(radians) * shapeDefinition.radiusX
-        const x2 = -Math.sin(radians) * shapeDefinition.radiusY
-        const xa = Math.atan2(x2, x1)
-        angles.push(((xa * 180) / Math.PI + 360) % 360, ((xa * 180) / Math.PI + 180) % 360)
-        const y1 = Math.sin(radians) * shapeDefinition.radiusX
-        const y2 = Math.cos(radians) * shapeDefinition.radiusY
-        const ya = Math.atan2(y2, y1)
-        angles.push(((ya * 180) / Math.PI + 360) % 360, ((ya * 180) / Math.PI + 180) % 360)
+        const x1 = Math.cos(radians) * shapeDefinition.radiusX;
+        const x2 = -Math.sin(radians) * shapeDefinition.radiusY;
+        const xa = Math.atan2(x2, x1);
+        angles.push(
+          ((xa * 180) / Math.PI + 360) % 360,
+          ((xa * 180) / Math.PI + 180) % 360,
+        );
+        const y1 = Math.sin(radians) * shapeDefinition.radiusX;
+        const y2 = Math.cos(radians) * shapeDefinition.radiusY;
+        const ya = Math.atan2(y2, y1);
+        angles.push(
+          ((ya * 180) / Math.PI + 360) % 360,
+          ((ya * 180) / Math.PI + 180) % 360,
+        );
 
-        for (const angle of angles.filter((value, index, arr) => arr.indexOf(value) === index)) {
+        for (const angle of angles.filter(
+          (value, index, arr) => arr.indexOf(value) === index,
+        )) {
           if (shiftedStartAngle !== shiftedEndAngle) {
             if (shiftedStartAngle > shiftedEndAngle) {
-              if (angle < shiftedStartAngle && angle > shiftedEndAngle) continue
-            } else if (angle < shiftedStartAngle || angle > shiftedEndAngle) continue
+              if (angle < shiftedStartAngle && angle > shiftedEndAngle)
+                continue;
+            } else if (angle < shiftedStartAngle || angle > shiftedEndAngle)
+              continue;
           }
-          let px = Math.cos((angle * Math.PI) / 180) * shapeDefinition.radiusX
-          let py = Math.sin((angle * Math.PI) / 180) * shapeDefinition.radiusY
+          let px = Math.cos((angle * Math.PI) / 180) * shapeDefinition.radiusX;
+          let py = Math.sin((angle * Math.PI) / 180) * shapeDefinition.radiusY;
           {
-            const cos = Math.cos((shapeDefinition.rotation * Math.PI) / 180)
-            const sin = -Math.sin((shapeDefinition.rotation * Math.PI) / 180)
-            ;[px, py] = [cos * px + sin * py, cos * py - sin * px]
+            const cos = Math.cos((shapeDefinition.rotation * Math.PI) / 180);
+            const sin = -Math.sin((shapeDefinition.rotation * Math.PI) / 180);
+            [px, py] = [cos * px + sin * py, cos * py - sin * px];
           }
-          px += shapeDefinition.x
-          py += shapeDefinition.y
+          px += shapeDefinition.x;
+          py += shapeDefinition.y;
 
-          minX = Math.min(minX, px)
-          minY = Math.min(minY, py)
-          maxX = Math.max(maxX, px)
-          maxY = Math.max(maxY, py)
+          minX = Math.min(minX, px);
+          minY = Math.min(minY, py);
+          maxX = Math.max(maxX, px);
+          maxY = Math.max(maxY, py);
         }
-        minX -= options.lineWidth / 2
-        minY -= options.lineWidth / 2
-        maxX += options.lineWidth / 2
-        maxY += options.lineWidth / 2
+        minX -= options.lineWidth / 2;
+        minY -= options.lineWidth / 2;
+        maxX += options.lineWidth / 2;
+        maxY += options.lineWidth / 2;
 
         return {
           minX,
           minY,
           maxX,
-          maxY
-        }
+          maxY,
+        };
       })(),
       /**
        * @param {number} px
@@ -1274,33 +1438,33 @@ class Glass {
           this.radiusY,
           this.startAngle,
           this.endAngle,
-          this.rotation
-        )
+          this.rotation,
+        );
       },
       /**
        * @param {number} scale
        */
       scale(scale) {
-        this.x *= scale
-        this.y *= scale
-        this.radiusX *= scale
-        this.radiusY *= scale
-        this.lineWidth *= scale
-        scaleBounds(scale, this.bounds)
-        if (options.shadowBlur) options.shadowBlur *= scale
+        this.x *= scale;
+        this.y *= scale;
+        this.radiusX *= scale;
+        this.radiusY *= scale;
+        this.lineWidth *= scale;
+        scaleBounds(scale, this.bounds);
+        if (options.shadowBlur) options.shadowBlur *= scale;
       },
       /**
        * @param {number} x
        * @param {number} y
        */
       shift(x, y) {
-        this.x += x
-        this.y += y
-        shiftBounds(x, y, this.bounds)
+        this.x += x;
+        this.y += y;
+        shiftBounds(x, y, this.bounds);
       },
       /** @param {CanvasRenderingContext2D} ctx */
       render(ctx) {
-        ctx.beginPath()
+        ctx.beginPath();
         ctx.ellipse(
           this.x,
           this.y,
@@ -1308,13 +1472,13 @@ class Glass {
           this.radiusY,
           (this.rotation * Math.PI) / 180,
           ((this.startAngle + 270) * Math.PI) / 180,
-          ((this.endAngle + 270) * Math.PI) / 180
-        )
-        ctxClose(instance, ctx, this)
-      }
-    }
-    this._renderStack.push(obj)
-    return obj
+          ((this.endAngle + 270) * Math.PI) / 180,
+        );
+        ctxClose(instance, ctx, this);
+      },
+    };
+    this._renderStack.push(obj);
+    return obj;
   }
 
   /**
@@ -1333,20 +1497,20 @@ class Glass {
    * @return {GlassEntryText}
    */
   text(shapeDefinition, options, ...tags) {
-    const instance = this
-    options = asOptions(options)
-    fillDefaultOptions(this, options)
-    options.lineWidth = options.lineWidth ?? 0
-    shapeDefinition.text = String(shapeDefinition.text)
-    shapeDefinition.baseline = shapeDefinition.baseline ?? 'bottom'
-    shapeDefinition.alignment = shapeDefinition.alignment ?? 'left'
-    shapeDefinition.font = shapeDefinition.font ?? 'Arial'
-    shapeDefinition.rotation = shapeDefinition.rotation ?? 0
-    this.ctx.font = `${shapeDefinition.size}px ${shapeDefinition.font}`
+    const instance = this;
+    options = asOptions(options);
+    fillDefaultOptions(this, options);
+    options.lineWidth = options.lineWidth ?? 0;
+    shapeDefinition.text = String(shapeDefinition.text);
+    shapeDefinition.baseline = shapeDefinition.baseline ?? "bottom";
+    shapeDefinition.alignment = shapeDefinition.alignment ?? "left";
+    shapeDefinition.font = shapeDefinition.font ?? "Arial";
+    shapeDefinition.rotation = shapeDefinition.rotation ?? 0;
+    this.ctx.font = `${shapeDefinition.size}px ${shapeDefinition.font}`;
     /** @type {GlassEntryText} */
     const entry = {
-      type: 'text',
-      mouseMode: 'ignore',
+      type: "text",
+      mouseMode: "ignore",
       ...shapeDefinition,
       rotation: shapeDefinition.rotation,
       baseline: shapeDefinition.baseline,
@@ -1356,16 +1520,18 @@ class Glass {
       lineWidth: options.lineWidth,
       tags,
       bounds: (() => {
-        let minX = shapeDefinition.x - options.lineWidth / 2
-        let minY = shapeDefinition.y - options.lineWidth / 2
+        let minX = shapeDefinition.x - options.lineWidth / 2;
+        let minY = shapeDefinition.y - options.lineWidth / 2;
         const width = Math.min(
           this.ctx.measureText(shapeDefinition.text).width,
-          shapeDefinition.maxWidth ?? Number.POSITIVE_INFINITY
-        )
-        if (shapeDefinition.baseline === 'middle') minY -= shapeDefinition.size / 2
-        else if (shapeDefinition.baseline === 'bottom') minY -= shapeDefinition.size
-        if (shapeDefinition.alignment === 'center') minX -= width / 2
-        else if (shapeDefinition.alignment === 'right') minX -= width
+          shapeDefinition.maxWidth ?? Number.POSITIVE_INFINITY,
+        );
+        if (shapeDefinition.baseline === "middle")
+          minY -= shapeDefinition.size / 2;
+        else if (shapeDefinition.baseline === "bottom")
+          minY -= shapeDefinition.size;
+        if (shapeDefinition.alignment === "center") minX -= width / 2;
+        else if (shapeDefinition.alignment === "right") minX -= width;
 
         return rotateBounds(
           shapeDefinition.x,
@@ -1374,55 +1540,56 @@ class Glass {
             minX,
             minY,
             maxX: minX + width + options.lineWidth / 2,
-            maxY: minY + shapeDefinition.size + options.lineWidth / 2
+            maxY: minY + shapeDefinition.size + options.lineWidth / 2,
           },
-          shapeDefinition.rotation
-        )
+          shapeDefinition.rotation,
+        );
       })(),
       /**
        * @param {number} scale
        */
       scale(scale) {
-        if (this.size === undefined) throw new TypeError('Missing size')
-        this.x *= scale
-        this.y *= scale
-        this.size *= scale
-        this.lineWidth *= scale
-        if (this.maxWidth) this.maxWidth *= scale
-        scaleBounds(scale, this.bounds)
-        if (options.shadowBlur) options.shadowBlur *= scale
+        if (this.size === undefined) throw new TypeError("Missing size");
+        this.x *= scale;
+        this.y *= scale;
+        this.size *= scale;
+        this.lineWidth *= scale;
+        if (this.maxWidth) this.maxWidth *= scale;
+        scaleBounds(scale, this.bounds);
+        if (options.shadowBlur) options.shadowBlur *= scale;
       },
       /**
        * @param {number} x
        * @param {number} y
        */
       shift(x, y) {
-        this.x += x
-        this.y += y
-        shiftBounds(x, y, this.bounds)
+        this.x += x;
+        this.y += y;
+        shiftBounds(x, y, this.bounds);
       },
       /** @param {CanvasRenderingContext2D} ctx */
       render(ctx) {
-        if (this.text === undefined) throw new TypeError('Missing text')
+        if (this.text === undefined) throw new TypeError("Missing text");
 
         if (this.rotation) {
-          ctx.save()
-          ctx.translate(this.x, this.y)
-          ctx.rotate((this.rotation * Math.PI) / 180)
-          ctx.translate(-this.x, -this.y)
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate((this.rotation * Math.PI) / 180);
+          ctx.translate(-this.x, -this.y);
         }
-        ctx.textAlign = this.alignment
-        ctx.textBaseline = this.baseline
-        const font = `${this.size}px ${this.font}`
-        ctx.font = font
-        ctxClose(instance, ctx, this, true)
-        if (this.lineWidth) ctx.strokeText(this.text, this.x, this.y, this.maxWidth)
-        else ctx.fillText(this.text, this.x, this.y, this.maxWidth)
-        if (this.rotation) ctx.restore()
-      }
-    }
-    this._renderStack.push(entry)
-    return entry
+        ctx.textAlign = this.alignment;
+        ctx.textBaseline = this.baseline;
+        const font = `${this.size}px ${this.font}`;
+        ctx.font = font;
+        ctxClose(instance, ctx, this, true);
+        if (this.lineWidth)
+          ctx.strokeText(this.text, this.x, this.y, this.maxWidth);
+        else ctx.fillText(this.text, this.x, this.y, this.maxWidth);
+        if (this.rotation) ctx.restore();
+      },
+    };
+    this._renderStack.push(entry);
+    return entry;
   }
 
   /**
@@ -1440,16 +1607,17 @@ class Glass {
    * @return {GlassEntryTriangle}
    */
   triangle(shapeDefinition, options, ...tags) {
-    const instance = this
-    options = asOptions(options)
-    fillDefaultOptions(this, options)
-    shapeDefinition.rotation = (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360
+    const instance = this;
+    options = asOptions(options);
+    fillDefaultOptions(this, options);
+    shapeDefinition.rotation =
+      (((shapeDefinition.rotation ?? 0) % 360) + 360) % 360;
 
-    options.lineWidth = options.lineWidth ?? 0
-    options.mouseMode = options.mouseMode ?? this.defaultMouseMode
+    options.lineWidth = options.lineWidth ?? 0;
+    options.mouseMode = options.mouseMode ?? this.defaultMouseMode;
     /** @type {GlassEntryTriangle} */
     const entry = {
-      type: 'triangle',
+      type: "triangle",
       ...shapeDefinition,
       rotation: shapeDefinition.rotation,
       ...options,
@@ -1457,41 +1625,45 @@ class Glass {
       mouseMode: options.mouseMode,
       tags,
       bounds: (() => {
-        let minX = Number.POSITIVE_INFINITY
-        let minY = Number.POSITIVE_INFINITY
-        let maxX = Number.NEGATIVE_INFINITY
-        let maxY = Number.NEGATIVE_INFINITY
-        const angleInRadians = (shapeDefinition.rotation * Math.PI) / 180
-        const cos = Math.cos(angleInRadians)
-        const sin = Math.sin(angleInRadians)
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
+        const angleInRadians = (shapeDefinition.rotation * Math.PI) / 180;
+        const cos = Math.cos(angleInRadians);
+        const sin = Math.sin(angleInRadians);
         for (const point of [
           {
             x: shapeDefinition.x1,
-            y: shapeDefinition.y1
+            y: shapeDefinition.y1,
           },
           {
             x: shapeDefinition.x2,
-            y: shapeDefinition.y2
+            y: shapeDefinition.y2,
           },
           {
             x: shapeDefinition.x3,
-            y: shapeDefinition.y3
-          }
-        ].map(point => [
-          cos * (point.x - shapeDefinition.x1) - sin * (point.y - shapeDefinition.y1) + shapeDefinition.x1,
-          sin * (point.x - shapeDefinition.x1) + cos * (point.y - shapeDefinition.y1) + shapeDefinition.y1
+            y: shapeDefinition.y3,
+          },
+        ].map((point) => [
+          cos * (point.x - shapeDefinition.x1) -
+            sin * (point.y - shapeDefinition.y1) +
+            shapeDefinition.x1,
+          sin * (point.x - shapeDefinition.x1) +
+            cos * (point.y - shapeDefinition.y1) +
+            shapeDefinition.y1,
         ])) {
-          minX = Math.min(minX, point[0])
-          minY = Math.min(minY, point[1])
-          maxX = Math.max(maxX, point[0])
-          maxY = Math.max(maxY, point[1])
+          minX = Math.min(minX, point[0]);
+          minY = Math.min(minY, point[1]);
+          maxX = Math.max(maxX, point[0]);
+          maxY = Math.max(maxY, point[1]);
         }
         return {
           minX: minX - options.lineWidth / 2,
           minY: minY - options.lineWidth / 2,
           maxX: maxX + options.lineWidth / 2,
-          maxY: maxY + options.lineWidth / 2
-        }
+          maxY: maxY + options.lineWidth / 2,
+        };
       })(),
       /**
        * @param {number} px
@@ -1499,114 +1671,115 @@ class Glass {
        * @returns {boolean}
        */
       hasPoint(px, py) {
-        const cos = Math.cos((this.rotation * Math.PI) / 180)
-        const sin = Math.sin((this.rotation * Math.PI) / 180)
+        const cos = Math.cos((this.rotation * Math.PI) / 180);
+        const sin = Math.sin((this.rotation * Math.PI) / 180);
 
         /** @type {number[]} */
         const [x1, y1, x2, y2, x3, y3] = [
           {
             x: this.x1,
-            y: this.y1
+            y: this.y1,
           },
           {
             x: this.x2,
-            y: this.y2
+            y: this.y2,
           },
           {
             x: this.x3,
-            y: this.y3
-          }
-        ].flatMap(point => [
+            y: this.y3,
+          },
+        ].flatMap((point) => [
           cos * (point.x - this.x1) - sin * (point.y - this.y1) + this.x1,
-          sin * (point.x - this.x1) + cos * (point.y - this.y1) + this.y1
-        ])
+          sin * (point.x - this.x1) + cos * (point.y - this.y1) + this.y1,
+        ]);
 
-        const v0x = x3 - x1
-        const v0y = y3 - y1
-        const v1x = x2 - x1
-        const v1y = y2 - y1
-        const v2x = px - x1
-        const v2y = py - y1
+        const v0x = x3 - x1;
+        const v0y = y3 - y1;
+        const v1x = x2 - x1;
+        const v1y = y2 - y1;
+        const v2x = px - x1;
+        const v2y = py - y1;
 
-        const dot00 = v0x * v0x + v0y * v0y
-        const dot01 = v0x * v1x + v0y * v1y
-        const dot02 = v0x * v2x + v0y * v2y
-        const dot11 = v1x * v1x + v1y * v1y
-        const dot12 = v1x * v2x + v1y * v2y
+        const dot00 = v0x * v0x + v0y * v0y;
+        const dot01 = v0x * v1x + v0y * v1y;
+        const dot02 = v0x * v2x + v0y * v2y;
+        const dot11 = v1x * v1x + v1y * v1y;
+        const dot12 = v1x * v2x + v1y * v2y;
 
-        const denom = dot00 * dot11 - dot01 * dot01
-        const u = (dot11 * dot02 - dot01 * dot12) / denom
-        const v = (dot00 * dot12 - dot01 * dot02) / denom
+        const denom = dot00 * dot11 - dot01 * dot01;
+        const u = (dot11 * dot02 - dot01 * dot12) / denom;
+        const v = (dot00 * dot12 - dot01 * dot02) / denom;
 
-        return u >= 0 && v >= 0 && u + v <= 1
+        return u >= 0 && v >= 0 && u + v <= 1;
       },
       /**
        * @param {number} scale
        */
       scale(scale) {
-        this.x1 *= scale
-        this.y1 *= scale
-        this.x2 *= scale
-        this.y2 *= scale
-        this.x3 *= scale
-        this.y3 *= scale
+        this.x1 *= scale;
+        this.y1 *= scale;
+        this.x2 *= scale;
+        this.y2 *= scale;
+        this.x3 *= scale;
+        this.y3 *= scale;
 
-        this.lineWidth *= scale
-        scaleBounds(scale, this.bounds)
-        if (options.shadowBlur) options.shadowBlur *= scale
+        this.lineWidth *= scale;
+        scaleBounds(scale, this.bounds);
+        if (options.shadowBlur) options.shadowBlur *= scale;
       },
       /**
        * @param {number} x
        * @param {number} y
        */
       shift(x, y) {
-        this.x1 += x
-        this.y1 += y
-        this.x2 += x
-        this.y2 += y
-        this.x3 += x
-        this.y3 += y
+        this.x1 += x;
+        this.y1 += y;
+        this.x2 += x;
+        this.y2 += y;
+        this.x3 += x;
+        this.y3 += y;
 
-        shiftBounds(x, y, this.bounds)
+        shiftBounds(x, y, this.bounds);
       },
       /** @param {CanvasRenderingContext2D} ctx */
       render(ctx) {
-        ctx.beginPath()
+        ctx.beginPath();
 
-        const angleInRadians = (this.rotation * Math.PI) / 180
-        const cos = Math.cos(angleInRadians)
-        const sin = Math.sin(angleInRadians)
+        const angleInRadians = (this.rotation * Math.PI) / 180;
+        const cos = Math.cos(angleInRadians);
+        const sin = Math.sin(angleInRadians);
 
         const points = [
           {
             x: this.x1,
-            y: this.y1
+            y: this.y1,
           },
           {
             x: this.x2,
-            y: this.y2
+            y: this.y2,
           },
           {
             x: this.x3,
-            y: this.y3
-          }
-        ].map(point => ({
+            y: this.y3,
+          },
+        ].map((point) => ({
           x: cos * (point.x - this.x1) - sin * (point.y - this.y1) + this.x1,
-          y: sin * (point.x - this.x1) + cos * (point.y - this.y1) + this.y1
-        }))
+          y: sin * (point.x - this.x1) + cos * (point.y - this.y1) + this.y1,
+        }));
 
-        ctx.moveTo(points[0].x, points[0].y)
+        ctx.moveTo(points[0].x, points[0].y);
 
-        for (let i = 1; i <= points.length; i++) ctx.lineTo(points[i % points.length].x, points[i % points.length].y)
-        ctxClose(instance, ctx, this)
-      }
-    }
-    this._renderStack.push(entry)
-    return entry
+        for (let i = 1; i <= points.length; i++)
+          ctx.lineTo(points[i % points.length].x, points[i % points.length].y);
+        ctxClose(instance, ctx, this);
+      },
+    };
+    this._renderStack.push(entry);
+    return entry;
   }
 
   /**
-   * Just draws a basic line, a linewidth must be passed in options.
+   * Just draws a basic line, a lineWidth must be passed in options.
    * @param {object} shapeDefinition
    * @param {number} shapeDefinition.x1
    * @param {number} shapeDefinition.y1
@@ -1616,60 +1789,64 @@ class Glass {
    * @param {any} [tags]
    */
   line(shapeDefinition, options, ...tags) {
-    const instance = this
-    if (options.lineWidth === undefined) throw new Error('Cannot draw a line of undefined width.')
-    fillDefaultOptions(this, options)
-    options.mouseMode = options.mouseMode ?? this.defaultMouseMode
+    const instance = this;
+    if (options.lineWidth === undefined)
+      throw new Error("Cannot draw a line of undefined width.");
+    fillDefaultOptions(this, options);
+    options.mouseMode = options.mouseMode ?? this.defaultMouseMode;
     /** @type {GlassEntryLine} */
     const entry = {
-      type: 'line',
+      type: "line",
       ...shapeDefinition,
       ...options,
       lineWidth: options.lineWidth,
       mouseMode: options.mouseMode,
       tags,
       bounds: (() => {
-        const { x1, y1, x2, y2 } = shapeDefinition
-        const lineWidth = options.lineWidth
+        const { x1, y1, x2, y2 } = shapeDefinition;
+        const lineWidth = options.lineWidth;
 
         // If the lineCap mode is 'round' then I can just merge the bounding boxes of the circles at the ends.
 
-        if (options.lineCap === 'round') {
+        if (options.lineCap === "round") {
           const cir1Bounds = {
             minX: x1 - lineWidth / 2,
             minY: y1 - lineWidth / 2,
             maxX: x1 + lineWidth / 2,
-            maxY: y1 + lineWidth / 2
-          }
+            maxY: y1 + lineWidth / 2,
+          };
 
           const cir2Bounds = {
             minX: x2 - lineWidth / 2,
             minY: y2 - lineWidth / 2,
             maxX: x2 + lineWidth / 2,
-            maxY: y2 + lineWidth / 2
-          }
+            maxY: y2 + lineWidth / 2,
+          };
 
           return {
             minX: Math.min(cir1Bounds.minX, cir2Bounds.minX),
             minY: Math.min(cir1Bounds.minY, cir2Bounds.minY),
             maxX: Math.max(cir1Bounds.maxX, cir2Bounds.maxX),
-            maxY: Math.max(cir1Bounds.maxY, cir2Bounds.maxY)
-          }
+            maxY: Math.max(cir1Bounds.maxY, cir2Bounds.maxY),
+          };
         }
 
-        // Otherwise I have to treat the line as a rectangle, extend the ends based on the lineCap, then rotate it...
+        // Otherwise, I have to treat the line as a rectangle, extend the ends based on the lineCap, then rotate it…
 
-        const angle = Math.atan2(y2 - y1, x2 - x1)
-        const length = Math.sqrt(Math.abs(x2 - x1) ** 2 + Math.abs(y2 - y1) ** 2)
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const length = Math.sqrt(
+          Math.abs(x2 - x1) ** 2 + Math.abs(y2 - y1) ** 2,
+        );
 
-        const lineCapSize = options.lineCap === 'butt' ? 0 : options.lineWidth / 2
+        const lineCapSize =
+          options.lineCap === "butt" ? 0 : options.lineWidth / 2;
 
         const rectCorners = {
           x1: -lineCapSize,
           y1: -options.lineWidth / 2,
           x2: length + lineCapSize,
-          y2: options.lineWidth / 2
-        }
+          y2: options.lineWidth / 2,
+        };
 
         const rect = {
           x1: rectCorners.x1,
@@ -1679,8 +1856,8 @@ class Glass {
           x3: rectCorners.x2,
           y3: rectCorners.y2,
           x4: rectCorners.x2,
-          y4: rectCorners.y1
-        }
+          y4: rectCorners.y1,
+        };
 
         const rotatedRect = {
           x1: Math.cos(angle) * rect.x1 - Math.sin(angle) * rect.y1,
@@ -1690,8 +1867,8 @@ class Glass {
           x3: Math.cos(angle) * rect.x3 - Math.sin(angle) * rect.y3,
           y3: Math.sin(angle) * rect.x3 + Math.cos(angle) * rect.y3,
           x4: Math.cos(angle) * rect.x4 - Math.sin(angle) * rect.y4,
-          y4: Math.sin(angle) * rect.x4 + Math.cos(angle) * rect.y4
-        }
+          y4: Math.sin(angle) * rect.x4 + Math.cos(angle) * rect.y4,
+        };
 
         const shiftedRect = {
           x1: rotatedRect.x1 + x1,
@@ -1701,15 +1878,35 @@ class Glass {
           x3: rotatedRect.x3 + x1,
           y3: rotatedRect.y3 + y1,
           x4: rotatedRect.x4 + x1,
-          y4: rotatedRect.y4 + y1
-        }
+          y4: rotatedRect.y4 + y1,
+        };
 
         return {
-          minX: Math.min(shiftedRect.x1, shiftedRect.x2, shiftedRect.x3, shiftedRect.x4),
-          minY: Math.min(shiftedRect.y1, shiftedRect.y2, shiftedRect.y3, shiftedRect.y4),
-          maxX: Math.max(shiftedRect.x1, shiftedRect.x2, shiftedRect.x3, shiftedRect.x4),
-          maxY: Math.max(shiftedRect.y1, shiftedRect.y2, shiftedRect.y3, shiftedRect.y4)
-        }
+          minX: Math.min(
+            shiftedRect.x1,
+            shiftedRect.x2,
+            shiftedRect.x3,
+            shiftedRect.x4,
+          ),
+          minY: Math.min(
+            shiftedRect.y1,
+            shiftedRect.y2,
+            shiftedRect.y3,
+            shiftedRect.y4,
+          ),
+          maxX: Math.max(
+            shiftedRect.x1,
+            shiftedRect.x2,
+            shiftedRect.x3,
+            shiftedRect.x4,
+          ),
+          maxY: Math.max(
+            shiftedRect.y1,
+            shiftedRect.y2,
+            shiftedRect.y3,
+            shiftedRect.y4,
+          ),
+        };
       })(),
       /**
        * @param {number} px
@@ -1717,53 +1914,109 @@ class Glass {
        * @returns {boolean}
        */
       hasPoint(px, py) {
-        if (this.lineCap === 'round')
-          return distanceToLine(px, py, this.x1, this.y1, this.x2, this.y2) <= this.lineWidth / 2
-        const cx = (this.x1 + this.x2) / 2
-        const cy = (this.y1 + this.y2) / 2
+        if (this.lineCap === "round")
+          return (
+            distanceToLine(px, py, this.x1, this.y1, this.x2, this.y2) <=
+            this.lineWidth / 2
+          );
+        const cx = (this.x1 + this.x2) / 2;
+        const cy = (this.y1 + this.y2) / 2;
         const width =
-          distanceBetweenPoints(this.x1, this.y1, cx, cy) * 2 + (this.lineCap === 'square' ? this.lineWidth : 0)
-        const angle = Math.atan2(this.y1 - this.y2, this.x1 - this.x2)
-        return isPointInRect(px, py, cx, cy, width, this.lineWidth, angle, 'center')
+          distanceBetweenPoints(this.x1, this.y1, cx, cy) * 2 +
+          (this.lineCap === "square" ? this.lineWidth : 0);
+        const angle = Math.atan2(this.y1 - this.y2, this.x1 - this.x2);
+        return isPointInRect(
+          px,
+          py,
+          cx,
+          cy,
+          width,
+          this.lineWidth,
+          angle,
+          "center",
+        );
       },
       /**
        * @param {number} scale
        */
       scale(scale) {
-        this.x1 *= scale
-        this.y1 *= scale
-        this.x2 *= scale
-        this.y2 *= scale
+        this.x1 *= scale;
+        this.y1 *= scale;
+        this.x2 *= scale;
+        this.y2 *= scale;
 
-        this.lineWidth *= scale
-        scaleBounds(scale, this.bounds)
-        if (options.shadowBlur) options.shadowBlur *= scale
+        this.lineWidth *= scale;
+        scaleBounds(scale, this.bounds);
+        if (options.shadowBlur) options.shadowBlur *= scale;
       },
       /**
        * @param {number} x
        * @param {number} y
        */
       shift(x, y) {
-        this.x1 += x
-        this.y1 += y
-        this.x2 += x
-        this.y2 += y
+        this.x1 += x;
+        this.y1 += y;
+        this.x2 += x;
+        this.y2 += y;
 
-        shiftBounds(x, y, this.bounds)
+        shiftBounds(x, y, this.bounds);
       },
       /** @param {CanvasRenderingContext2D} ctx */
       render(ctx) {
-        ctx.beginPath()
+        ctx.beginPath();
 
-        ctx.moveTo(this.x1, this.y1)
-        ctx.lineTo(this.x2, this.y2)
+        ctx.moveTo(this.x1, this.y1);
+        ctx.lineTo(this.x2, this.y2);
 
-        ctxClose(instance, ctx, this)
-      }
-    }
-    this._renderStack.push(entry)
-    return entry
+        ctxClose(instance, ctx, this);
+      },
+    };
+    this._renderStack.push(entry);
+    return entry;
   }
 }
 
-export default Glass
+/**
+ * @typedef {object} Sprite
+ * @prop {() => void} _render
+ * @prop {(other: Sprite) => Sprite} join
+ * @prop {() => Sprite} copy
+ * @prop {() => void} delete
+ * @prop {number} x
+ * @prop {number} y
+ * @prop {number} rotation
+ * @prop {number} scale
+ * @prop {Glass} glass
+ *
+ * @typedef {object} SpriteOptions
+ * @prop {number} x
+ * @prop {number} y
+ * @prop {number} rotation
+ * @prop {number} scale
+ * @prop {Glass} glass
+ */
+
+/**
+ * @param {Parameters<Glass['rect']>[0]} shapeDefinition
+ * @param {Parameters<Glass['rect']>[1]} options
+ * @param {SpriteOptions} spriteOptions
+ * @returns {Sprite}
+ */
+export const createSpriteRect = (shapeDefinition, options, spriteOptions) => {
+  /** @type {Sprite} */
+  const sprite = {
+    _render: () => spriteOptions.glass.rect(shapeDefinition, options),
+    join: () => {
+      throw new Error("Not implemented yet");
+    },
+    copy: () => {
+      throw new Error("Not implemented yet");
+    },
+    delete: () => {
+      throw new Error("Not implemented yet");
+    },
+    ...spriteOptions,
+  };
+  spriteOptions.glass._sprites.add(sprite);
+  return sprite;
+};
